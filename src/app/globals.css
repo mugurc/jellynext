@@ -1,26 +1,161 @@
 @import "tailwindcss";
 
+/*
+  JellyNext design tokens — mirrors design-ref/JellyNext.dc.html 1:1.
+  Runtime-tweakable knobs (--accent, --accent-2, --radius) live on :root so
+  they can be overridden at runtime exactly like the prototype does.
+*/
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Theme knobs (tweakable) */
+  --accent: #4d9fff;
+  --accent-2: #2563eb;
+  --radius: 8px;
+
+  /* Surfaces */
+  --bg: #0f171e;
+  --surface: #17212b;
+  --card: #1b2833;
+  --nav: #141d26;
+  --login-bg: #0a1319;
+  --scrim: #08131a;
+
+  /* Text */
+  --text: #f1f3f5;
+  --bright: #c3d0d9;
+  --para: #a7b7c1;
+  --muted: #8197a4;
+  --dim: #5b6b78;
+  --on-accent: #08131a;
+
+  /* Semantic */
+  --success: #5fd08a;
+  --danger: #ff4d5e;
+  --danger-soft: #ff8a95;
+
+  /* Borders */
+  --border: rgba(129, 151, 164, 0.12);
+  --border-strong: rgba(129, 151, 164, 0.22);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Colors → Tailwind utilities (bg-bg, text-muted, border-border, …) */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-card: var(--card);
+  --color-nav: var(--nav);
+  --color-login: var(--login-bg);
+  --color-scrim: var(--scrim);
+
+  --color-text: var(--text);
+  --color-bright: var(--bright);
+  --color-para: var(--para);
+  --color-muted: var(--muted);
+  --color-dim: var(--dim);
+  --color-on-accent: var(--on-accent);
+
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  /* Font — Figtree wired via next/font in layout.tsx */
+  --font-sans: var(--font-figtree), system-ui, sans-serif;
+
+  /* Tweakable card radius → rounded-token */
+  --radius-token: var(--radius);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Scrollbars (from prototype) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(129, 151, 164, 0.28);
+  border-radius: 20px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 151, 164, 0.45);
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  color: #eafcff;
+}
+input::placeholder {
+  color: var(--dim);
+}
+
+/* Focus ring for a11y */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Entry animations (from prototype) */
+@keyframes jnFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes jnUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.animate-jn-fade {
+  animation: jnFade 0.3s ease both;
+}
+.animate-jn-up {
+  animation: jnUp 0.5s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Hide horizontal scrollbars on carousels while keeping scroll */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

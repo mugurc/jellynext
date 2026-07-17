@@ -1,0 +1,6 @@
+.next
+node_modules
+pnpm-lock.yaml
+design-ref
+public/logo-mark.svg
+next-env.d.ts

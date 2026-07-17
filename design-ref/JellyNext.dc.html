@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:rgba(129,151,164,.28);border-radius:20px}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(129,151,164,.45)}
+  ::-webkit-scrollbar-track{background:transparent}
+  .lucide{width:1em;height:1em;stroke-width:2;vertical-align:-0.14em;display:inline-block}
+  a{color:var(--accent,#22d3d3);text-decoration:none}
+  a:hover{color:#eafcff}
+  input::placeholder{color:#5b6b78}
+  @keyframes jnFade{from{opacity:0}to{opacity:1}}
+  @keyframes jnUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<div ref="{{ setRoot }}" style="width:100%;min-height:100vh;height:100vh;background:#0f171e;color:#f1f3f5;font-family:Figtree,system-ui,sans-serif;position:relative;overflow:hidden">
+
+<!-- ============ LOGIN ============ -->
+<sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden">
+  <div style="position:absolute;inset:0;background:radial-gradient(120% 90% at 85% -20%, #12384a, transparent 55%), radial-gradient(110% 90% at -10% 120%, #0e2a3a, transparent 55%), #0a1319"></div>
+  <div style="position:absolute;top:28px;right:32px;display:flex;background:rgba(255,255,255,.07);border-radius:8px;padding:3px;z-index:3">
+    <button onClick="{{ setEn }}" style="{{ enBtn }}">EN</button>
+    <button onClick="{{ setTr }}" style="{{ trBtn }}">TR</button>
+  </div>
+  <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:40px;animation:jnUp .6s ease both">
+    <div style="display:flex;align-items:center;gap:14px">
+      <img src="logo-mark.svg" alt="JellyNext" style="width:54px;height:54px;flex:none;object-fit:contain" />
+      <div style="font-size:40px;font-weight:800;letter-spacing:-.02em">Jelly<span style="color:var(--accent,#22d3d3)">Next</span></div>
+    </div>
+    <div style="font-size:15px;color:#8197a4;margin-top:-16px">{{ tWhoWatching }}</div>
+    <div style="display:flex;gap:26px;flex-wrap:wrap;justify-content:center;max-width:640px">
+      <sc-for list="{{ profiles }}" as="p" hint-placeholder-count="4">
+        <div onClick="{{ p.onClick }}" style="display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer" style-hover="transform:translateY(-4px)">
+          <div style="{{ p.boxStyle }}" style-hover="outline:3px solid var(--accent,#22d3d3);outline-offset:3px">{{ p.initial }}</div>
+          <div style="font-size:15px;font-weight:600;color:#c3d0d9">{{ p.name }}</div>
+        </div>
+      </sc-for>
+    </div>
+    <button onClick="{{ enter }}" style="margin-top:6px;display:flex;align-items:center;gap:10px;padding:13px 28px;border:1px solid rgba(129,151,164,.3);border-radius:10px;background:rgba(255,255,255,.03);color:#f1f3f5;font-family:Figtree;font-size:15px;font-weight:600;cursor:pointer" style-hover="background:rgba(255,255,255,.08)"><i data-lucide="log-in"></i> {{ tOtherAccount }}</button>
+    <div style="position:absolute;bottom:-130px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;font-size:12.5px;color:#4a5a67"><i data-lucide="server"></i> {{ tConnected }}</div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ============ APP ============ -->
+<sc-if value="{{ isApp }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;height:100%;width:100%">
+  <!-- Top nav -->
+  <header style="height:64px;flex:none;display:flex;align-items:center;gap:20px;padding:0 32px;background:rgba(11,18,24,.82);backdrop-filter:blur(14px);border-bottom:1px solid rgba(129,151,164,.12);z-index:20">
+    <div onClick="{{ enter }}" style="display:flex;align-items:center;gap:11px;cursor:pointer;flex:none">
+      <img src="logo-mark.svg" alt="JellyNext" style="width:36px;height:36px;flex:none;object-fit:contain" />
+      <div style="font-size:21px;font-weight:800;letter-spacing:-.02em">Jelly<span style="color:var(--accent,#22d3d3)">Next</span></div>
+    </div>
+    <nav style="display:flex;align-items:center;gap:4px">
+      <sc-for list="{{ navItems }}" as="n" hint-placeholder-count="5">
+        <div onClick="{{ n.onClick }}" style="{{ n.style }}" style-hover="color:#f1f3f5">{{ n.label }}</div>
+      </sc-for>
+    </nav>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:9px;min-width:0">
+      <div onClick="{{ openSearch }}" style="display:flex;align-items:center;gap:9px;height:38px;padding:0 14px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(129,151,164,.14);flex:1;min-width:44px;max-width:240px;cursor:text">
+        <span style="color:#5b6b78;font-size:17px;display:flex"><i data-lucide="search"></i></span>
+        <input onFocus="{{ openSearch }}" placeholder="{{ tSearch }}" style="flex:1;min-width:0;background:none;border:none;outline:none;color:#f1f3f5;font-family:Figtree;font-size:14px" />
+      </div>
+      <div style="display:flex;background:rgba(255,255,255,.05);border-radius:8px;padding:3px">
+        <button onClick="{{ setEn }}" style="{{ enBtn }}">EN</button>
+        <button onClick="{{ setTr }}" style="{{ trBtn }}">TR</button>
+      </div>
+      <button style="width:38px;height:38px;border-radius:9px;border:none;background:transparent;color:#8197a4;cursor:pointer;font-size:19px;display:flex;align-items:center;justify-content:center;position:relative" style-hover="background:rgba(255,255,255,.06);color:#f1f3f5"><i data-lucide="bell"></i><span style="position:absolute;top:8px;right:9px;width:6px;height:6px;border-radius:50%;background:var(--accent,#22d3d3)"></span></button>
+      <button onClick="{{ goSettings }}" style="width:38px;height:38px;border-radius:9px;border:none;background:transparent;color:#8197a4;cursor:pointer;font-size:19px;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.06);color:#f1f3f5"><i data-lucide="settings"></i></button>
+      <div onClick="{{ openPrefs }}" style="width:34px;height:34px;border-radius:8px;background:radial-gradient(circle at 35% 30%, #2bd4c6, #157a9e);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;cursor:pointer;flex:none" style-hover="outline:2px solid var(--accent,#22d3d3);outline-offset:2px">M</div>
+    </div>
+  </header>
+
+  <main ref="{{ setContent }}" style="flex:1;overflow-y:auto;overflow-x:hidden">
+
+    <!-- ===== HOME ===== -->
+    <sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <!-- Billboard -->
+      <section style="position:relative;height:600px;display:flex;align-items:flex-end;overflow:hidden">
+        <div style="{{ hero.backdrop }}"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(90deg, rgba(15,23,30,.96) 0%, rgba(15,23,30,.6) 42%, rgba(15,23,30,.15) 72%, transparent 100%)"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg, #0f171e 2%, transparent 34%)"></div>
+        <div style="position:relative;padding:0 40px 64px;max-width:660px;animation:jnUp .5s ease both">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;letter-spacing:.02em;color:var(--accent,#22d3d3)"><i data-lucide="check-circle-2"></i> {{ tIncluded }}</span>
+            <span style="font-size:13px;font-weight:600;color:#8197a4">{{ hero.typeLine }}</span>
+          </div>
+          <h1 style="font-size:62px;line-height:1;font-weight:800;letter-spacing:-.03em;margin-bottom:18px;text-wrap:balance">{{ hero.title }}</h1>
+          <div style="display:flex;align-items:center;gap:13px;font-size:13.5px;font-weight:600;color:#c3d0d9;margin-bottom:16px">
+            <span style="display:flex;align-items:center;gap:5px;color:var(--accent,#22d3d3)"><i data-lucide="star"></i> {{ hero.rating }}</span>
+            <span>{{ hero.year }}</span>
+            <span>{{ hero.runtime }}</span>
+            <span style="border:1px solid rgba(195,208,217,.4);border-radius:4px;padding:0 6px;font-size:11.5px">{{ hero.maturity }}</span>
+            <span style="border:1px solid rgba(195,208,217,.4);border-radius:4px;padding:0 6px;font-size:11.5px">{{ hero.quality }}</span>
+          </div>
+          <p style="font-size:15.5px;line-height:1.55;color:#a7b7c1;margin-bottom:26px;max-width:540px;text-wrap:pretty">{{ hero.overview }}</p>
+          <div style="display:flex;align-items:center;gap:12px">
+            <button onClick="{{ play }}" style="display:flex;align-items:center;gap:9px;padding:14px 34px;border:none;border-radius:8px;background:#fff;color:#0f171e;font-family:Figtree;font-size:16px;font-weight:800;cursor:pointer" style-hover="background:#d9f7fb"><span style="font-size:20px;display:flex"><i data-lucide="play"></i></span> {{ tPlay }}</button>
+            <button onClick="{{ hero.onOpen }}" style="display:flex;align-items:center;gap:9px;padding:14px 24px;border:none;border-radius:8px;background:rgba(129,151,164,.22);color:#fff;font-family:Figtree;font-size:15px;font-weight:700;cursor:pointer;backdrop-filter:blur(4px)" style-hover="background:rgba(129,151,164,.34)"><i data-lucide="info"></i> {{ tDetails }}</button>
+            <button style="width:50px;height:50px;border-radius:8px;border:1.5px solid rgba(195,208,217,.4);background:rgba(129,151,164,.15);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="border-color:#fff"><i data-lucide="plus"></i></button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:34px">
+            <sc-for list="{{ heroDots }}" as="dot" hint-placeholder-count="3"><div onClick="{{ dot.onClick }}" style="{{ dot.style }}"></div></sc-for>
+          </div>
+        </div>
+      </section>
+
+      <div style="padding:0 40px 60px;margin-top:-30px;position:relative">
+        <sc-for list="{{ rows }}" as="row" hint-placeholder-count="5">
+          <div style="margin-bottom:38px">
+            <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:15px">
+              <h2 style="font-size:20px;font-weight:700;letter-spacing:-.01em">{{ row.title }}</h2>
+              <a href="#" style="font-size:12.5px;font-weight:600;color:var(--accent,#22d3d3);margin-left:auto;display:flex;align-items:center;gap:2px">{{ tSeeAll }} <span style="display:inline-flex;vertical-align:-.12em"><i data-lucide="chevron-right"></i></span></a>
+            </div>
+            <sc-if value="{{ row.wide }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;gap:16px;overflow-x:auto;padding-bottom:6px">
+                <sc-for list="{{ row.items }}" as="item" hint-placeholder-count="5">
+                  <div onClick="{{ item.onOpen }}" style="flex:none;width:326px;position:relative;cursor:pointer;transition:transform .18s">
+                    <div style="position:relative;aspect-ratio:16/9;border-radius:var(--radius,8px);overflow:hidden;background:#1b2833;box-shadow:0 6px 20px rgba(0,0,0,.4)">
+                      <div style="{{ item.fill }}"></div>
+                      <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(8,15,20,.9))"></div>
+                      <sc-if value="{{ item.isCw }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.2)"><div style="{{ item.bar }}"></div></div></sc-if>
+                      <span style="position:absolute;top:9px;left:9px;display:flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--accent,#22d3d3);background:rgba(8,15,20,.6);backdrop-filter:blur(4px);padding:3px 7px;border-radius:5px"><i data-lucide="check-circle-2"></i> {{ tIncludedShort }}</span>
+                      <div style="position:absolute;left:14px;right:14px;bottom:13px">
+                        <div style="font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ item.title }}</div>
+                        <div style="font-size:11.5px;color:#a7b7c1;margin-top:2px">{{ item.meta }}</div>
+                      </div>
+                      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;gap:11px;padding:16px;background:linear-gradient(180deg,rgba(8,15,20,.2),rgba(8,15,20,.92));opacity:0;transition:opacity .2s" style-hover="opacity:1">
+                        <div style="font-size:16px;font-weight:700;line-height:1.15">{{ item.title }}</div>
+                        <div style="font-size:12px;color:#a7b7c1;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ item.synopsis }}</div>
+                        <div style="display:flex;align-items:center;gap:9px">
+                          <button onClick="{{ item.onPlay }}" style="display:flex;align-items:center;gap:6px;padding:8px 16px;border:none;border-radius:7px;background:#fff;color:#0f171e;font-family:Figtree;font-size:13px;font-weight:800;cursor:pointer"><span style="display:flex"><i data-lucide="play"></i></span> {{ tPlay }}</button>
+                          <button onClick="{{ item.onAdd }}" style="width:36px;height:36px;border-radius:7px;border:1.5px solid rgba(195,208,217,.45);background:transparent;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center" style-hover="border-color:#fff"><i data-lucide="plus"></i></button>
+                          <button onClick="{{ item.onAdd }}" style="width:36px;height:36px;border-radius:7px;border:1.5px solid rgba(195,208,217,.45);background:transparent;color:#fff;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center" style-hover="border-color:#fff"><i data-lucide="thumbs-up"></i></button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ row.poster }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;gap:16px;overflow-x:auto;padding-bottom:6px">
+                <sc-for list="{{ row.items }}" as="item" hint-placeholder-count="7">
+                  <div onClick="{{ item.onOpen }}" style="flex:none;width:184px;position:relative;cursor:pointer;transition:transform .18s">
+                    <div style="position:relative;aspect-ratio:2/3;border-radius:var(--radius,8px);overflow:hidden;background:#1b2833;box-shadow:0 6px 20px rgba(0,0,0,.4)">
+                      <div style="{{ item.fill }}"></div>
+                      <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 52%,rgba(8,15,20,.9))"></div>
+                      <sc-if value="{{ showRatings }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:9px;right:9px;display:flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:#fff;background:rgba(8,15,20,.6);backdrop-filter:blur(4px);padding:3px 7px;border-radius:5px"><span style="display:flex;color:var(--accent,#22d3d3)"><i data-lucide="star"></i></span>{{ item.rating }}</span></sc-if>
+                      <span style="position:absolute;top:9px;left:9px;display:flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--accent,#22d3d3);background:rgba(8,15,20,.6);backdrop-filter:blur(4px);padding:3px 6px;border-radius:5px"><i data-lucide="check-circle-2"></i></span>
+                      <div style="position:absolute;left:12px;right:12px;bottom:12px">
+                        <div style="font-size:14px;font-weight:700;line-height:1.2;text-wrap:pretty">{{ item.title }}</div>
+                        <div style="font-size:11px;color:#8197a4;display:flex;gap:6px;margin-top:2px"><span>{{ item.year }}</span><span>·</span><span>{{ item.genre }}</span></div>
+                      </div>
+                      <div style="position:absolute;inset:0;display:flex;flex-direction:column;justify-content:flex-end;gap:10px;padding:14px;background:linear-gradient(180deg,rgba(8,15,20,.15),rgba(8,15,20,.94));opacity:0;transition:opacity .2s" style-hover="opacity:1">
+                        <div style="font-size:14.5px;font-weight:700;line-height:1.2">{{ item.title }}</div>
+                        <div style="font-size:11.5px;color:#a7b7c1;line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">{{ item.synopsis }}</div>
+                        <div style="display:flex;align-items:center;gap:8px">
+                          <button onClick="{{ item.onPlay }}" style="display:flex;align-items:center;gap:5px;padding:7px 13px;border:none;border-radius:7px;background:#fff;color:#0f171e;font-family:Figtree;font-size:12.5px;font-weight:800;cursor:pointer"><span style="display:flex"><i data-lucide="play"></i></span> {{ tPlay }}</button>
+                          <button onClick="{{ item.onAdd }}" style="width:34px;height:34px;border-radius:7px;border:1.5px solid rgba(195,208,217,.45);background:transparent;color:#fff;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center" style-hover="border-color:#fff"><i data-lucide="plus"></i></button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== LIBRARY ===== -->
+    <sc-if value="{{ isLibrary }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:34px 40px 64px;animation:jnFade .3s ease both">
+      <div style="display:flex;align-items:flex-end;gap:16px;margin-bottom:24px">
+        <h1 style="font-size:36px;font-weight:800;letter-spacing:-.02em">{{ libTitle }}</h1>
+        <div style="margin-left:auto;font-size:13.5px;color:#8197a4;padding-bottom:5px">{{ libCount }} {{ tItems }}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:26px;flex-wrap:wrap">
+        <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4"><button onClick="{{ f.onClick }}" style="{{ f.style }}">{{ f.label }}</button></sc-for>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:9px">
+          <button style="display:flex;align-items:center;gap:7px;padding:9px 15px;border-radius:8px;border:1px solid rgba(129,151,164,.22);background:rgba(255,255,255,.03);color:#c3d0d9;font-family:Figtree;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:rgba(255,255,255,.07)"><i data-lucide="arrow-down-up"></i> {{ tSort }}</button>
+          <button style="display:flex;align-items:center;gap:7px;padding:9px 15px;border-radius:8px;border:1px solid rgba(129,151,164,.22);background:rgba(255,255,255,.03);color:#c3d0d9;font-family:Figtree;font-size:13px;font-weight:600;cursor:pointer" style-hover="background:rgba(255,255,255,.07)"><i data-lucide="sliders-horizontal"></i> {{ tFilter }}</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:20px">
+        <sc-for list="{{ libItems }}" as="item" hint-placeholder-count="18">
+          <div onClick="{{ item.onOpen }}" style="position:relative;cursor:pointer;transition:transform .18s">
+            <div style="position:relative;aspect-ratio:2/3;border-radius:var(--radius,8px);overflow:hidden;background:#1b2833;box-shadow:0 6px 20px rgba(0,0,0,.4);margin-bottom:10px">
+              <div style="{{ item.fill }}"></div>
+              <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 58%,rgba(8,15,20,.85))"></div>
+              <sc-if value="{{ showRatings }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:9px;right:9px;display:flex;align-items:center;gap:3px;font-size:11px;font-weight:700;color:#fff;background:rgba(8,15,20,.6);backdrop-filter:blur(4px);padding:3px 7px;border-radius:5px"><span style="display:flex;color:var(--accent,#22d3d3)"><i data-lucide="star"></i></span>{{ item.rating }}</span></sc-if>
+              <span style="position:absolute;top:9px;left:9px;font-size:10px;font-weight:700;color:#c3d0d9;background:rgba(8,15,20,.55);backdrop-filter:blur(4px);padding:3px 7px;border-radius:5px">{{ item.kindTr }}</span>
+            </div>
+            <div style="font-size:14px;font-weight:700;line-height:1.25;text-wrap:pretty">{{ item.title }}</div>
+            <div style="font-size:11.5px;color:#8197a4;display:flex;gap:6px;margin-top:2px"><span>{{ item.year }}</span><span>·</span><span>{{ item.genre }}</span></div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== DETAIL ===== -->
+    <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+    <div style="animation:jnFade .3s ease both">
+      <section style="position:relative;min-height:540px;display:flex;align-items:flex-end;overflow:hidden">
+        <div style="{{ detail.backdrop }}"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(90deg, rgba(15,23,30,.97) 0%, rgba(15,23,30,.55) 55%, transparent 92%)"></div>
+        <div style="position:absolute;inset:0;background:linear-gradient(0deg, #0f171e 1%, transparent 40%)"></div>
+        <div style="position:relative;padding:0 40px 44px;max-width:680px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <span style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--accent,#22d3d3)"><i data-lucide="check-circle-2"></i> {{ tIncluded }}</span>
+            <span style="font-size:12.5px;font-weight:600;color:#8197a4">{{ detail.kindTr }}</span>
+          </div>
+          <h1 style="font-size:52px;line-height:1;font-weight:800;letter-spacing:-.03em;margin-bottom:16px;text-wrap:balance">{{ detail.title }}</h1>
+          <div style="display:flex;align-items:center;gap:13px;font-size:13.5px;font-weight:600;color:#c3d0d9;margin-bottom:18px;flex-wrap:wrap">
+            <span style="display:flex;align-items:center;gap:5px;color:var(--accent,#22d3d3)"><i data-lucide="star"></i> {{ detail.rating }} · IMDb</span>
+            <span>{{ detail.year }}</span>
+            <span>{{ detail.runtime }}</span>
+            <span style="border:1px solid rgba(195,208,217,.4);border-radius:4px;padding:0 6px;font-size:11.5px">{{ detail.maturity }}</span>
+            <span style="border:1px solid rgba(195,208,217,.4);border-radius:4px;padding:0 6px;font-size:11.5px">{{ detail.quality }}</span>
+            <span style="display:flex;align-items:center;gap:5px"><i data-lucide="volume-2"></i> 5.1</span>
+          </div>
+          <p style="font-size:15.5px;line-height:1.6;color:#a7b7c1;margin-bottom:24px;max-width:600px;text-wrap:pretty">{{ detail.overview }}</p>
+          <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap">
+            <button onClick="{{ play }}" style="display:flex;align-items:center;gap:9px;padding:14px 34px;border:none;border-radius:8px;background:#fff;color:#0f171e;font-family:Figtree;font-size:16px;font-weight:800;cursor:pointer" style-hover="background:#d9f7fb"><span style="font-size:20px;display:flex"><i data-lucide="play"></i></span> {{ tPlay }}</button>
+            <button style="display:flex;align-items:center;gap:8px;padding:14px 22px;border:1.5px solid rgba(195,208,217,.4);border-radius:8px;background:rgba(129,151,164,.12);color:#fff;font-family:Figtree;font-size:14.5px;font-weight:700;cursor:pointer" style-hover="border-color:#fff"><i data-lucide="plus"></i> {{ tWatchlist }}</button>
+            <button style="width:50px;height:50px;border-radius:8px;border:1.5px solid rgba(195,208,217,.4);background:rgba(129,151,164,.12);color:#fff;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="border-color:#fff"><i data-lucide="download"></i></button>
+            <button style="width:50px;height:50px;border-radius:8px;border:1.5px solid rgba(195,208,217,.4);background:rgba(129,151,164,.12);color:#fff;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="border-color:#fff"><i data-lucide="share-2"></i></button>
+          </div>
+        </div>
+      </section>
+
+      <div style="padding:0 40px 64px">
+        <div style="display:flex;gap:6px;border-bottom:1px solid rgba(129,151,164,.16);margin-bottom:28px">
+          <sc-for list="{{ detailTabs }}" as="dt" hint-placeholder-count="4"><button onClick="{{ dt.onClick }}" style="{{ dt.style }}">{{ dt.label }}</button></sc-for>
+        </div>
+
+        <sc-if value="{{ tabEpisodes }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+            <div style="display:flex;gap:6px;background:rgba(255,255,255,.04);border-radius:9px;padding:4px">
+              <sc-for list="{{ seasons }}" as="se" hint-placeholder-count="3"><button onClick="{{ se.onClick }}" style="{{ se.style }}">{{ se.label }}</button></sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ detail.episodes }}" as="ep" hint-placeholder-count="6">
+              <div onClick="{{ play }}" style="display:flex;gap:18px;padding:14px;border-radius:12px;cursor:pointer;transition:background .15s;align-items:center" style-hover="background:rgba(255,255,255,.04)">
+                <div style="flex:none;color:#5b6b78;font-size:20px;font-weight:800;width:26px;text-align:center">{{ ep.n }}</div>
+                <div style="flex:none;width:172px;aspect-ratio:16/9;border-radius:8px;overflow:hidden;position:relative;background:#1b2833">
+                  <div style="{{ ep.fill }}"></div>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(8,15,20,.2);opacity:0;transition:opacity .2s" style-hover="opacity:1"><div style="width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.92);color:#0f171e;display:flex;align-items:center;justify-content:center;font-size:17px"><i data-lucide="play"></i></div></div>
+                  <div style="position:absolute;right:7px;bottom:7px;font-size:10.5px;font-weight:700;background:rgba(8,15,20,.75);padding:2px 6px;border-radius:4px">{{ ep.dur }}</div>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:15.5px;font-weight:700;margin-bottom:5px">{{ ep.title }}</div>
+                  <p style="font-size:13px;line-height:1.5;color:#8197a4;text-wrap:pretty;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ ep.overview }}</p>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ tabRelated }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:18px">
+          <sc-for list="{{ detail.related }}" as="item" hint-placeholder-count="8">
+            <div onClick="{{ item.onOpen }}" style="cursor:pointer;transition:transform .18s">
+              <div style="position:relative;aspect-ratio:2/3;border-radius:var(--radius,8px);overflow:hidden;background:#1b2833;margin-bottom:9px">
+                <div style="{{ item.fill }}"></div>
+                <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(8,15,20,.8))"></div>
+              </div>
+              <div style="font-size:13.5px;font-weight:700;line-height:1.2">{{ item.title }}</div>
+              <div style="font-size:11.5px;color:#8197a4;margin-top:2px">{{ item.year }} · {{ item.genre }}</div>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ tabDetails }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:1fr 380px;gap:40px;align-items:start">
+          <div>
+            <sc-for list="{{ detail.facts }}" as="ft" hint-placeholder-count="6">
+              <div style="display:grid;grid-template-columns:180px 1fr;gap:20px;padding:13px 0;border-bottom:1px solid rgba(129,151,164,.1)">
+                <span style="font-size:13.5px;color:#8197a4">{{ ft.k }}</span>
+                <span style="font-size:13.5px;font-weight:600">{{ ft.v }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:16px"><span style="color:var(--accent,#22d3d3);font-size:19px;display:flex"><i data-lucide="layers"></i></span><h3 style="font-size:15px;font-weight:700">{{ xVersions }}</h3></div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:22px">
+              <sc-for list="{{ detail.versions }}" as="v" hint-placeholder-count="3">
+                <div onClick="{{ v.onClick }}" style="{{ v.style }}">
+                  <span style="flex:none;display:flex;align-items:center;color:var(--accent,#22d3d3);font-size:16px"><i data-lucide="disc-3"></i></span>
+                  <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ v.label }}</div><div style="font-size:11px;color:#8197a4">{{ v.meta }}</div></div>
+                  <sc-if value="{{ v.on }}" hint-placeholder-val="{{ true }}"><span style="color:var(--accent,#22d3d3);font-size:17px;display:flex;flex:none"><i data-lucide="check-circle-2"></i></span></sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px"><span style="color:var(--accent,#22d3d3);font-size:18px;display:flex"><i data-lucide="volume-2"></i></span><h3 style="font-size:15px;font-weight:700">{{ xAudioTracks }}</h3></div>
+            <div style="display:flex;flex-direction:column;gap:2px">
+              <sc-for list="{{ detail.audioTracks }}" as="au" hint-placeholder-count="4">
+                <div onClick="{{ au.onClick }}" style="display:flex;align-items:center;gap:11px;padding:9px 6px;border-radius:8px;cursor:pointer" style-hover="background:rgba(255,255,255,.03)">
+                  <span style="{{ au.dotStyle }}"></span>
+                  <div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600">{{ au.lang }}</div></div>
+                  <span style="font-size:11px;color:#8197a4;flex:none">{{ au.codec }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;padding:20px">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:16px"><span style="color:var(--accent,#22d3d3);font-size:19px;display:flex"><i data-lucide="captions"></i></span><h3 style="font-size:15px;font-weight:700">{{ xSubAvailable }}</h3></div>
+            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:22px">
+              <sc-for list="{{ detail.subExisting }}" as="sb" hint-placeholder-count="3">
+                <div style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:9px;background:rgba(255,255,255,.03)">
+                  <span style="font-size:10px;font-weight:800;color:#8197a4;background:rgba(129,151,164,.16);padding:3px 6px;border-radius:5px;flex:none">{{ sb.fmt }}</span>
+                  <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ sb.lang }}</div><div style="font-size:11px;color:#5b6b78">{{ sb.src }}</div></div>
+                  <sc-if value="{{ sb.on }}" hint-placeholder-val="{{ false }}"><span style="font-size:11px;font-weight:700;color:var(--accent,#22d3d3);background:rgba(34,211,211,.14);padding:4px 9px;border-radius:20px;flex:none">{{ xActive }}</span></sc-if>
+                  <sc-if value="{{ sb.off }}" hint-placeholder-val="{{ true }}"><button onClick="{{ noop }}" style="font-size:11.5px;font-weight:700;color:#c3d0d9;background:rgba(129,151,164,.14);border:none;padding:5px 11px;border-radius:8px;cursor:pointer;flex:none" style-hover="background:rgba(129,151,164,.24)">{{ xEnable }}</button></sc-if>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:6px"><span style="color:#8197a4;font-size:17px;display:flex"><i data-lucide="search"></i></span><h3 style="font-size:15px;font-weight:700">{{ xSubSearch }}</h3></div>
+            <div style="font-size:11.5px;color:#5b6b78;margin-bottom:14px">{{ xSubProviders }}</div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <sc-for list="{{ detail.subResults }}" as="sr" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:9px;transition:background .15s" style-hover="background:rgba(255,255,255,.03)">
+                  <span style="font-size:10px;font-weight:800;color:#8197a4;background:rgba(129,151,164,.16);padding:3px 6px;border-radius:5px;flex:none">{{ sr.fmt }}</span>
+                  <div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600">{{ sr.lang }}</div><div style="font-size:10.5px;color:#5b6b78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ sr.meta }}</div></div>
+                  <button onClick="{{ noop }}" style="display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;color:#08131a;background:var(--accent,#22d3d3);border:none;padding:6px 11px;border-radius:8px;cursor:pointer;flex:none" style-hover="filter:brightness(1.1)"><span style="display:flex;font-size:13px"><i data-lucide="download"></i></span> {{ xDownload }}</button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ tabCast }}" hint-placeholder-val="{{ false }}">
+        <div>
+          <h3 style="font-size:17px;font-weight:700;margin-bottom:18px">{{ tCast }}</h3>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin-bottom:40px">
+            <sc-for list="{{ detail.cast }}" as="c" hint-placeholder-count="6">
+              <div style="display:flex;gap:12px;align-items:center;padding:10px;border-radius:12px;background:rgba(255,255,255,.03)">
+                <div style="{{ c.boxStyle }}"></div>
+                <div style="min-width:0"><div style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</div><div style="font-size:11.5px;color:#8197a4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.role }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+          <h3 style="font-size:17px;font-weight:700;margin-bottom:6px">{{ tScenes }}</h3>
+          <p style="font-size:12.5px;color:#8197a4;margin-bottom:18px">{{ tScenesDesc }}</p>
+          <div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:8px">
+            <sc-for list="{{ detail.scenes }}" as="sc" hint-placeholder-count="6">
+              <div style="flex:none;width:210px;cursor:pointer" style-hover="transform:translateY(-3px)">
+                <div style="position:relative;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#1b2833;margin-bottom:8px">
+                  <div style="{{ sc.fill }}"></div>
+                  <div style="position:absolute;left:8px;bottom:8px;font-size:11px;font-weight:700;background:rgba(8,15,20,.8);color:var(--accent,#22d3d3);padding:2px 7px;border-radius:4px">{{ sc.time }}</div>
+                </div>
+                <div style="font-size:13px;font-weight:600;color:#c3d0d9">{{ sc.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== SETTINGS ===== -->
+    <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:34px 40px 64px;animation:jnFade .3s ease both">
+      <div style="margin-bottom:26px">
+        <div style="font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--accent,#22d3d3);margin-bottom:7px">{{ tAdminKicker }}</div>
+        <h1 style="font-size:36px;font-weight:800;letter-spacing:-.02em">{{ tServerPanel }}</h1>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:30px;border-bottom:1px solid rgba(129,151,164,.16);flex-wrap:wrap">
+        <sc-for list="{{ setTabs }}" as="t" hint-placeholder-count="6"><button onClick="{{ t.onClick }}" style="{{ t.style }}"><span style="font-size:16px;display:flex"><i data-lucide="{{ t.icon }}"></i></span>{{ t.label }}</button></sc-for>
+      </div>
+
+      <sc-if value="{{ isDash }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:30px">
+          <sc-for list="{{ stats }}" as="st" hint-placeholder-count="4">
+            <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;padding:20px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+                <span style="{{ st.iconStyle }}"><i data-lucide="{{ st.icon }}"></i></span>
+                <span style="{{ st.deltaStyle }}">{{ st.delta }}</span>
+              </div>
+              <div style="font-size:28px;font-weight:800;letter-spacing:-.02em;margin-bottom:3px">{{ st.value }}</div>
+              <div style="font-size:12.5px;color:#8197a4">{{ st.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:20px;margin-bottom:20px">
+          <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;padding:22px">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px"><span style="width:8px;height:8px;border-radius:50%;background:var(--accent,#22d3d3)"></span><h3 style="font-size:17px;font-weight:700">{{ tActiveStreams }}</h3><span style="margin-left:auto;font-size:12.5px;color:#8197a4">{{ tSessions }}</span></div>
+            <div style="display:flex;flex-direction:column;gap:15px">
+              <sc-for list="{{ streams }}" as="sm" hint-placeholder-count="3">
+                <div style="display:flex;gap:13px;align-items:center">
+                  <div style="flex:none;width:62px;height:38px;border-radius:7px;overflow:hidden;position:relative"><div style="{{ sm.fill }}"></div></div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ sm.title }}</div>
+                    <div style="font-size:11.5px;color:#8197a4"><span style="color:#c3d0d9">{{ sm.user }}</span> · {{ sm.device }} · {{ sm.mode }}</div>
+                    <div style="margin-top:6px;height:4px;border-radius:4px;background:rgba(129,151,164,.2)"><div style="{{ sm.bar }}"></div></div>
+                  </div>
+                  <div style="flex:none;font-size:11.5px;color:#8197a4">{{ sm.time }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;padding:22px">
+            <h3 style="font-size:17px;font-weight:700;margin-bottom:16px">{{ tRecentActivity }}</h3>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <sc-for list="{{ activity }}" as="a" hint-placeholder-count="5">
+                <div style="display:flex;gap:11px;align-items:flex-start">
+                  <span style="width:31px;height:31px;flex:none;border-radius:8px;background:rgba(129,151,164,.14);display:flex;align-items:center;justify-content:center;font-size:14px;color:#c3d0d9"><i data-lucide="{{ a.icon }}"></i></span>
+                  <div style="flex:1;min-width:0"><div style="font-size:13px;line-height:1.4;color:#dbe3e8">{{ a.text }}</div><div style="font-size:11px;color:#5b6b78;margin-top:2px">{{ a.time }}</div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;padding:22px">
+          <div style="display:flex;align-items:center;margin-bottom:18px"><h3 style="font-size:17px;font-weight:700">{{ tLibrariesTitle }}</h3><button style="margin-left:auto;display:flex;align-items:center;gap:7px;padding:9px 15px;border:none;border-radius:8px;background:var(--accent,#22d3d3);color:#08131a;font-family:Figtree;font-size:12.5px;font-weight:800;cursor:pointer"><i data-lucide="plus"></i> {{ tAddLibrary }}</button></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+            <sc-for list="{{ libraries }}" as="lb" hint-placeholder-count="6">
+              <div style="display:flex;gap:13px;align-items:center;padding:13px;border-radius:11px;background:rgba(255,255,255,.02);border:1px solid rgba(129,151,164,.1)">
+                <span style="{{ lb.iconStyle }}"><i data-lucide="{{ lb.icon }}"></i></span>
+                <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700">{{ lb.name }}</div><div style="font-size:11.5px;color:#8197a4">{{ lb.count }}</div></div>
+                <span style="color:#5b6b78;font-size:16px;display:flex"><i data-lucide="more-vertical"></i></span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isUsers }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;overflow:hidden">
+        <div style="display:flex;align-items:center;padding:18px 22px;border-bottom:1px solid rgba(129,151,164,.12)"><h3 style="font-size:17px;font-weight:700">{{ tUsersTitle }}</h3><button style="margin-left:auto;display:flex;align-items:center;gap:7px;padding:9px 15px;border:none;border-radius:8px;background:var(--accent,#22d3d3);color:#08131a;font-family:Figtree;font-size:12.5px;font-weight:800;cursor:pointer"><i data-lucide="user-plus"></i> {{ tAddUser }}</button></div>
+        <div style="display:grid;grid-template-columns:2fr 1.4fr 1fr 1fr 40px;padding:13px 22px;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:#5b6b78;border-bottom:1px solid rgba(129,151,164,.1)"><span>{{ uc0 }}</span><span>{{ uc1 }}</span><span>{{ uc2 }}</span><span>{{ uc3 }}</span><span></span></div>
+        <sc-for list="{{ users }}" as="u" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:2fr 1.4fr 1fr 1fr 40px;align-items:center;padding:14px 22px;border-bottom:1px solid rgba(129,151,164,.07)" style-hover="background:rgba(255,255,255,.02)">
+            <div style="display:flex;align-items:center;gap:12px"><div style="{{ u.boxStyle }}">{{ u.initial }}</div><div><div style="font-size:13.5px;font-weight:700">{{ u.name }}</div><div style="font-size:11.5px;color:#8197a4">{{ u.email }}</div></div></div>
+            <span style="font-size:12.5px;color:#c3d0d9">{{ u.last }}</span>
+            <span style="font-size:12.5px;color:#c3d0d9">{{ u.plays }}</span>
+            <span style="{{ u.roleStyle }}">{{ u.role }}</span>
+            <span style="color:#5b6b78;font-size:16px;display:flex;cursor:pointer"><i data-lucide="more-vertical"></i></span>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isLibrariesTab }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px">
+        <sc-for list="{{ libraries }}" as="lb" hint-placeholder-count="6">
+          <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:13px;padding:18px">
+            <div style="display:flex;gap:13px;align-items:center;margin-bottom:16px"><span style="{{ lb.iconStyle }}"><i data-lucide="{{ lb.icon }}"></i></span><div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:700">{{ lb.name }}</div><div style="font-size:11.5px;color:#8197a4">{{ lb.count }}</div></div></div>
+            <div style="display:flex;gap:8px">
+              <button style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px;border:1px solid rgba(129,151,164,.22);border-radius:8px;background:transparent;color:#c3d0d9;font-family:Figtree;font-size:12.5px;font-weight:700;cursor:pointer" style-hover="background:rgba(255,255,255,.05)"><i data-lucide="refresh-cw"></i> {{ xScan }}</button>
+              <button style="width:38px;border:1px solid rgba(129,151,164,.22);border-radius:8px;background:transparent;color:#c3d0d9;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.05)"><i data-lucide="settings-2"></i></button>
+            </div>
+          </div>
+        </sc-for>
+        <div onClick="{{ noop }}" style="border:1.5px dashed rgba(129,151,164,.3);border-radius:13px;padding:18px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#8197a4;cursor:pointer;min-height:120px" style-hover="border-color:var(--accent,#22d3d3);color:var(--accent,#22d3d3)"><span style="font-size:24px;display:flex"><i data-lucide="plus"></i></span><span style="font-size:13px;font-weight:700">{{ tAddLibrary }}</span></div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isDevices }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;overflow:hidden">
+        <div style="display:grid;grid-template-columns:2fr 1fr 1.4fr 1.2fr 40px;padding:13px 22px;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:#5b6b78;border-bottom:1px solid rgba(129,151,164,.1)"><span>{{ xColDevice }}</span><span>{{ xColUser }}</span><span>{{ xColApp }}</span><span>{{ xColLast }}</span><span></span></div>
+        <sc-for list="{{ devices }}" as="dv" hint-placeholder-count="5">
+          <div style="display:grid;grid-template-columns:2fr 1fr 1.4fr 1.2fr 40px;align-items:center;padding:14px 22px;border-bottom:1px solid rgba(129,151,164,.07)" style-hover="background:rgba(255,255,255,.02)">
+            <div style="display:flex;align-items:center;gap:12px"><span style="width:34px;height:34px;flex:none;border-radius:9px;background:rgba(34,211,211,.12);color:var(--accent,#22d3d3);display:flex;align-items:center;justify-content:center;font-size:16px"><i data-lucide="{{ dv.icon }}"></i></span><div style="min-width:0"><div style="font-size:13.5px;font-weight:700">{{ dv.name }}</div><div style="font-size:11px;color:#5b6b78">{{ dv.ip }}</div></div></div>
+            <span style="font-size:12.5px;color:#c3d0d9">{{ dv.user }}</span>
+            <span style="font-size:12.5px;color:#8197a4">{{ dv.app }}</span>
+            <span style="font-size:12.5px;color:#8197a4">{{ dv.last }}</span>
+            <span style="color:#5b6b78;font-size:16px;display:flex;cursor:pointer"><i data-lucide="more-vertical"></i></span>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isLiveAdmin }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;padding:22px">
+          <div style="display:flex;align-items:center;margin-bottom:16px"><h3 style="font-size:16px;font-weight:700">{{ xTuners }}</h3><button style="margin-left:auto;display:flex;align-items:center;gap:6px;padding:8px 13px;border:none;border-radius:8px;background:var(--accent,#22d3d3);color:#08131a;font-family:Figtree;font-size:12px;font-weight:800;cursor:pointer"><i data-lucide="plus"></i> {{ xAddTuner }}</button></div>
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <sc-for list="{{ tuners }}" as="tu" hint-placeholder-count="2">
+              <div style="display:flex;gap:12px;align-items:center;padding:13px;border-radius:11px;background:rgba(255,255,255,.02);border:1px solid rgba(129,151,164,.1)"><span style="width:38px;height:38px;flex:none;border-radius:9px;background:rgba(34,211,211,.12);color:var(--accent,#22d3d3);display:flex;align-items:center;justify-content:center;font-size:17px"><i data-lucide="antenna"></i></span><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">{{ tu.name }}</div><div style="font-size:11.5px;color:#8197a4">{{ tu.info }}</div></div><span style="font-size:11px;font-weight:700;color:#5fd08a;background:rgba(95,208,138,.14);padding:3px 9px;border-radius:20px">{{ tu.status }}</span></div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;padding:22px">
+          <h3 style="font-size:16px;font-weight:700;margin-bottom:16px">{{ xGuideProviders }}</h3>
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <sc-for list="{{ guideProviders }}" as="gp" hint-placeholder-count="2">
+              <div style="display:flex;gap:12px;align-items:center;padding:13px;border-radius:11px;background:rgba(255,255,255,.02);border:1px solid rgba(129,151,164,.1)"><span style="width:38px;height:38px;flex:none;border-radius:9px;background:rgba(34,211,211,.12);color:var(--accent,#22d3d3);display:flex;align-items:center;justify-content:center;font-size:17px"><i data-lucide="calendar-days"></i></span><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:700">{{ gp.name }}</div><div style="font-size:11.5px;color:#8197a4">{{ gp.info }}</div></div><span style="font-size:11.5px;color:#8197a4">{{ gp.range }}</span></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isPlugins }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:14px">{{ xInstalled }}</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-bottom:32px">
+          <sc-for list="{{ pluginsInstalled }}" as="pl" hint-placeholder-count="4">
+            <div style="display:flex;gap:13px;align-items:center;padding:16px;border-radius:12px;background:#17212b;border:1px solid rgba(129,151,164,.12)">
+              <span style="width:42px;height:42px;flex:none;border-radius:10px;background:rgba(34,211,211,.12);color:var(--accent,#22d3d3);display:flex;align-items:center;justify-content:center;font-size:19px"><i data-lucide="puzzle"></i></span>
+              <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700">{{ pl.name }} <span style="font-size:11px;font-weight:600;color:#5b6b78">{{ pl.version }}</span></div><div style="font-size:11.5px;color:#8197a4">{{ pl.desc }}</div></div>
+              <div onClick="{{ pl.onToggle }}" style="{{ pl.toggleStyle }}"><div style="width:20px;height:20px;border-radius:50%;background:#fff"></div></div>
+            </div>
+          </sc-for>
+        </div>
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:14px">{{ xCatalog }}</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">
+          <sc-for list="{{ pluginsCatalog }}" as="pl" hint-placeholder-count="6">
+            <div style="display:flex;gap:13px;align-items:center;padding:16px;border-radius:12px;background:#17212b;border:1px solid rgba(129,151,164,.12)">
+              <span style="width:42px;height:42px;flex:none;border-radius:10px;background:rgba(129,151,164,.14);color:#c3d0d9;display:flex;align-items:center;justify-content:center;font-size:19px"><i data-lucide="package"></i></span>
+              <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700">{{ pl.name }}</div><div style="font-size:11.5px;color:#8197a4">{{ pl.desc }}</div><span style="font-size:10.5px;font-weight:700;color:#8197a4;background:rgba(129,151,164,.14);padding:2px 8px;border-radius:20px;display:inline-block;margin-top:6px">{{ pl.cat }}</span></div>
+              <button style="{{ pl.btnStyle }}">{{ pl.btnLabel }}</button>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isTasks }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;overflow:hidden">
+        <sc-for list="{{ tasks }}" as="tk" hint-placeholder-count="6">
+          <div style="display:flex;gap:16px;align-items:center;padding:16px 22px;border-bottom:1px solid rgba(129,151,164,.07)" style-hover="background:rgba(255,255,255,.02)">
+            <span style="width:38px;height:38px;flex:none;border-radius:9px;background:rgba(34,211,211,.12);color:var(--accent,#22d3d3);display:flex;align-items:center;justify-content:center;font-size:17px"><i data-lucide="clock"></i></span>
+            <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700">{{ tk.name }}</div><div style="font-size:11.5px;color:#8197a4">{{ tk.last }}</div><sc-if value="{{ tk.isRunning }}" hint-placeholder-val="{{ false }}"><div style="margin-top:7px;height:4px;border-radius:4px;background:rgba(129,151,164,.2);max-width:280px"><div style="{{ tk.bar }}"></div></div></sc-if></div>
+            <span style="{{ tk.statusStyle }}">{{ tk.statusLabel }}</span>
+            <button style="flex:none;display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px solid rgba(129,151,164,.22);border-radius:8px;background:transparent;color:#c3d0d9;font-family:Figtree;font-size:12.5px;font-weight:700;cursor:pointer" style-hover="background:rgba(255,255,255,.05)"><i data-lucide="play"></i> {{ xRunNow }}</button>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isActivity }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;overflow:hidden">
+        <sc-for list="{{ activityLog }}" as="a" hint-placeholder-count="6">
+          <div style="display:flex;gap:14px;align-items:center;padding:15px 22px;border-bottom:1px solid rgba(129,151,164,.07)" style-hover="background:rgba(255,255,255,.02)">
+            <span style="{{ a.iconStyle }}"><i data-lucide="{{ a.icon }}"></i></span>
+            <div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:600;color:#dbe3e8">{{ a.text }}</div><div style="font-size:11.5px;color:#5b6b78;margin-top:1px">{{ a.user }}</div></div>
+            <span style="font-size:12px;color:#8197a4;flex:none">{{ a.time }}</span>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isApiKeys }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;overflow:hidden">
+        <div style="display:flex;align-items:center;padding:18px 22px;border-bottom:1px solid rgba(129,151,164,.12)"><h3 style="font-size:16px;font-weight:700">{{ xApiKeys }}</h3><button style="margin-left:auto;display:flex;align-items:center;gap:6px;padding:9px 15px;border:none;border-radius:8px;background:var(--accent,#22d3d3);color:#08131a;font-family:Figtree;font-size:12.5px;font-weight:800;cursor:pointer"><i data-lucide="plus"></i> {{ xNewKey }}</button></div>
+        <div style="display:grid;grid-template-columns:1.4fr 2fr 1fr 90px;padding:13px 22px;font-size:11.5px;font-weight:700;letter-spacing:.04em;color:#5b6b78;border-bottom:1px solid rgba(129,151,164,.1)"><span>{{ xColApp }}</span><span>{{ xColKey }}</span><span>{{ xColCreated }}</span><span></span></div>
+        <sc-for list="{{ apiKeys }}" as="k" hint-placeholder-count="3">
+          <div style="display:grid;grid-template-columns:1.4fr 2fr 1fr 90px;align-items:center;padding:14px 22px;border-bottom:1px solid rgba(129,151,164,.07)" style-hover="background:rgba(255,255,255,.02)">
+            <span style="font-size:13.5px;font-weight:700">{{ k.app }}</span>
+            <span style="font-size:12.5px;color:#8197a4;font-family:monospace">{{ k.key }}</span>
+            <span style="font-size:12.5px;color:#8197a4">{{ k.created }}</span>
+            <button style="font-size:12px;font-weight:700;color:#ff8a95;background:rgba(255,77,94,.12);border:none;padding:6px 12px;border-radius:7px;cursor:pointer" style-hover="background:rgba(255,77,94,.2)">{{ xRevoke }}</button>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{ isGeneric }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;padding:24px;max-width:760px">
+        <sc-for list="{{ genericRows }}" as="g" hint-placeholder-count="5">
+          <div style="display:flex;align-items:center;gap:20px;padding:17px 0;border-bottom:1px solid rgba(129,151,164,.1)">
+            <div style="flex:1"><div style="font-size:14.5px;font-weight:700;margin-bottom:3px">{{ g.title }}</div><div style="font-size:12.5px;color:#8197a4;line-height:1.4">{{ g.desc }}</div></div>
+            <div style="flex:none">
+              <sc-if value="{{ g.isToggle }}" hint-placeholder-val="{{ true }}"><div onClick="{{ g.onToggle }}" style="{{ g.toggleStyle }}"><div style="width:20px;height:20px;border-radius:50%;background:#fff"></div></div></sc-if>
+              <sc-if value="{{ g.isValue }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;font-weight:700;color:#c3d0d9;padding:8px 15px;border-radius:8px;background:rgba(129,151,164,.12)">{{ g.value }}</span></sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <!-- ===== SEARCH ===== -->
+    <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:30px 40px 80px;animation:jnFade .3s ease both">
+      <div style="display:flex;align-items:center;gap:12px;height:56px;padding:0 20px;border-radius:12px;background:#17212b;border:1px solid rgba(129,151,164,.16);margin-bottom:20px">
+        <span style="color:var(--accent,#22d3d3);font-size:22px;display:flex"><i data-lucide="search"></i></span>
+        <input value="{{ q }}" onInput="{{ onSearchInput }}" placeholder="{{ xSearchPh }}" style="flex:1;min-width:0;background:none;border:none;outline:none;color:#f1f3f5;font-family:Figtree;font-size:18px;font-weight:600" />
+        <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}"><button onClick="{{ clearSearch }}" style="width:34px;height:34px;border-radius:8px;border:none;background:rgba(129,151,164,.16);color:#c3d0d9;cursor:pointer;display:flex;align-items:center;justify-content:center"><i data-lucide="x"></i></button></sc-if>
+      </div>
+      <div style="display:flex;gap:9px;margin-bottom:28px;flex-wrap:wrap">
+        <sc-for list="{{ searchTypes }}" as="st" hint-placeholder-count="5"><button onClick="{{ st.onClick }}" style="{{ st.style }}">{{ st.label }}</button></sc-for>
+      </div>
+      <sc-if value="{{ noQuery }}" hint-placeholder-val="{{ true }}">
+      <div>
+        <h3 style="font-size:16px;font-weight:700;color:#8197a4;margin-bottom:14px">{{ xBrowseGenres }}</h3>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:34px">
+          <sc-for list="{{ genreChips }}" as="g" hint-placeholder-count="8"><div style="{{ g.style }}">{{ g.label }}</div></sc-for>
+        </div>
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:14px">{{ xTopSearches }}</h3>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:18px">
+          <sc-for list="{{ topSearches }}" as="item" hint-placeholder-count="6">
+            <div onClick="{{ item.onOpen }}" style="cursor:pointer;transition:transform .18s">
+              <div style="position:relative;aspect-ratio:2/3;border-radius:var(--radius,8px);overflow:hidden;background:#1b2833;margin-bottom:8px"><div style="{{ item.fill }}"></div><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(8,15,20,.8))"></div></div>
+              <div style="font-size:13.5px;font-weight:700">{{ item.title }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      </sc-if>
+      <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ false }}">
+      <div>
+        <sc-if value="{{ showPeople }}" hint-placeholder-val="{{ true }}">
+        <div style="margin-bottom:30px">
+          <h3 style="font-size:16px;font-weight:700;margin-bottom:14px">{{ xPeople }}</h3>
+          <div style="display:flex;gap:22px;overflow-x:auto;padding-bottom:6px">
+            <sc-for list="{{ peopleResults }}" as="c" hint-placeholder-count="5">
+              <div onClick="{{ c.onOpen }}" style="flex:none;width:96px;text-align:center;cursor:pointer" style-hover="transform:translateY(-3px)">
+                <div style="{{ c.boxStyle }}"></div>
+                <div style="font-size:12.5px;font-weight:700;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ c.name }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        </sc-if>
+        <h3 style="font-size:16px;font-weight:700;margin-bottom:14px">{{ resultsTitle }}</h3>
+        <sc-if value="{{ hasResults }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:18px">
+          <sc-for list="{{ searchResults }}" as="item" hint-placeholder-count="8">
+            <div onClick="{{ item.onOpen }}" style="cursor:pointer;transition:transform .18s">
+              <div style="position:relative;aspect-ratio:2/3;border-radius:var(--radius,8px);overflow:hidden;background:#1b2833;margin-bottom:8px"><div style="{{ item.fill }}"></div><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(8,15,20,.8))"></div><span style="position:absolute;top:9px;left:9px;font-size:10px;font-weight:700;color:#c3d0d9;background:rgba(8,15,20,.6);padding:3px 7px;border-radius:5px">{{ item.kindTr }}</span></div>
+              <div style="font-size:13.5px;font-weight:700;line-height:1.2">{{ item.title }}</div>
+              <div style="font-size:11.5px;color:#8197a4;margin-top:2px">{{ item.year }} · {{ item.genre }}</div>
+            </div>
+          </sc-for>
+        </div>
+        </sc-if>
+        <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}"><div style="padding:50px 0;text-align:center;color:#5b6b78;font-size:15px">{{ xNoResults }}</div></sc-if>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <!-- ===== LIVE TV ===== -->
+    <sc-if value="{{ isLiveTV }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:30px 40px 80px;animation:jnFade .3s ease both">
+      <div style="display:flex;align-items:flex-end;gap:16px;margin-bottom:22px">
+        <h1 style="font-size:34px;font-weight:800;letter-spacing:-.02em">{{ xLiveTitle }}</h1>
+        <div style="display:flex;gap:6px;background:rgba(255,255,255,.04);border-radius:10px;padding:4px;margin-left:8px">
+          <sc-for list="{{ liveTabs }}" as="lt" hint-placeholder-count="3"><button onClick="{{ lt.onClick }}" style="{{ lt.style }}">{{ lt.label }}</button></sc-for>
+        </div>
+      </div>
+      <sc-if value="{{ liveGuide }}" hint-placeholder-val="{{ true }}">
+      <div style="background:#141d26;border:1px solid rgba(129,151,164,.12);border-radius:14px;overflow:hidden">
+        <div style="display:flex;padding:12px 0;border-bottom:1px solid rgba(129,151,164,.12);position:sticky;top:0;background:#141d26;z-index:2">
+          <div style="flex:none;width:180px"></div>
+          <div style="flex:1;display:flex">
+            <sc-for list="{{ guideTimes }}" as="tm" hint-placeholder-count="6"><div style="flex:1;font-size:12px;font-weight:700;color:#8197a4">{{ tm }}</div></sc-for>
+          </div>
+        </div>
+        <sc-for list="{{ channels }}" as="ch" hint-placeholder-count="8">
+          <div style="display:flex;align-items:stretch;border-bottom:1px solid rgba(129,151,164,.07);min-height:64px">
+            <div style="flex:none;width:180px;display:flex;align-items:center;gap:11px;padding:10px 14px">
+              <div style="{{ ch.logoStyle }}">{{ ch.code }}</div>
+              <div style="min-width:0"><div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ch.name }}</div><div style="font-size:11px;color:#5b6b78">{{ ch.num }}</div></div>
+            </div>
+            <div style="flex:1;display:flex;gap:4px;padding:8px 6px">
+              <sc-for list="{{ ch.programs }}" as="pg" hint-placeholder-count="4"><div onClick="{{ pg.onPlay }}" style="{{ pg.style }}"><div style="font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ pg.title }}</div><div style="font-size:10.5px;color:#8197a4">{{ pg.time }}</div></div></sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+      <sc-if value="{{ liveChannels }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+        <sc-for list="{{ channels }}" as="ch" hint-placeholder-count="8">
+          <div onClick="{{ ch.onPlay }}" style="display:flex;gap:13px;align-items:center;padding:14px;border-radius:12px;background:#17212b;border:1px solid rgba(129,151,164,.12);cursor:pointer" style-hover="border-color:var(--accent,#22d3d3)">
+            <div style="{{ ch.logoStyleLg }}">{{ ch.code }}</div>
+            <div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700">{{ ch.name }}</div><div style="font-size:11.5px;color:var(--accent,#22d3d3);font-weight:600;margin-top:2px">{{ xOnNow }}</div><div style="font-size:12px;color:#8197a4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ch.nowTitle }}</div></div>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+      <sc-if value="{{ liveRec }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ recordings }}" as="r" hint-placeholder-count="4">
+          <div style="display:flex;gap:16px;align-items:center;padding:14px;border-radius:12px;background:#17212b;border:1px solid rgba(129,151,164,.12)">
+            <div style="flex:none;width:120px;aspect-ratio:16/9;border-radius:8px;overflow:hidden;position:relative"><div style="{{ r.fill }}"></div><span style="position:absolute;top:6px;left:6px;width:9px;height:9px;border-radius:50%;background:#ff4d5e"></span></div>
+            <div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:700">{{ r.title }}</div><div style="font-size:12px;color:#8197a4">{{ r.meta }}</div></div>
+            <button onClick="{{ play }}" style="display:flex;align-items:center;gap:6px;padding:9px 16px;border:none;border-radius:8px;background:#fff;color:#0f171e;font-family:Figtree;font-size:13px;font-weight:800;cursor:pointer"><i data-lucide="play"></i> {{ tPlay }}</button>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <!-- ===== MUSIC ===== -->
+    <sc-if value="{{ isMusic }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:30px 40px 100px;animation:jnFade .3s ease both">
+      <h1 style="font-size:34px;font-weight:800;letter-spacing:-.02em;margin-bottom:26px">{{ xMusicTitle }}</h1>
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:15px">{{ xRecentlyPlayed }}</h3>
+      <div style="display:flex;gap:16px;overflow-x:auto;padding-bottom:8px;margin-bottom:34px">
+        <sc-for list="{{ recentAlbums }}" as="al" hint-placeholder-count="6">
+          <div onClick="{{ al.onOpen }}" style="flex:none;width:170px;cursor:pointer" style-hover="transform:translateY(-4px)">
+            <div style="position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#1b2833;margin-bottom:9px;box-shadow:0 6px 20px rgba(0,0,0,.4)"><div style="{{ al.fill }}"></div></div>
+            <div style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ al.title }}</div>
+            <div style="font-size:11.5px;color:#8197a4">{{ al.artist }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:15px">{{ xArtists }}</h3>
+      <div style="display:flex;gap:24px;overflow-x:auto;padding-bottom:8px;margin-bottom:34px">
+        <sc-for list="{{ artists }}" as="ar" hint-placeholder-count="8">
+          <div style="flex:none;width:120px;text-align:center;cursor:pointer" style-hover="transform:translateY(-3px)">
+            <div style="{{ ar.boxStyle }}"></div>
+            <div style="font-size:13px;font-weight:700;margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ ar.name }}</div>
+            <div style="font-size:11px;color:#8197a4">{{ xArtistLabel }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:15px">{{ xAlbums }}</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:20px">
+        <sc-for list="{{ albums }}" as="al" hint-placeholder-count="12">
+          <div onClick="{{ al.onOpen }}" style="cursor:pointer" style-hover="transform:translateY(-4px)">
+            <div style="position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;background:#1b2833;margin-bottom:9px;box-shadow:0 6px 20px rgba(0,0,0,.4)"><div style="{{ al.fill }}"></div></div>
+            <div style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ al.title }}</div>
+            <div style="font-size:11.5px;color:#8197a4">{{ al.artist }} · {{ al.year }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== ALBUM ===== -->
+    <sc-if value="{{ isAlbum }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:34px 40px 110px;animation:jnFade .3s ease both">
+      <div style="display:flex;gap:30px;margin-bottom:34px;flex-wrap:wrap">
+        <div style="flex:none;width:220px;aspect-ratio:1;border-radius:14px;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(0,0,0,.5)"><div style="{{ album.fill }}"></div></div>
+        <div style="flex:1;min-width:260px;align-self:flex-end">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.08em;color:var(--accent,#22d3d3);margin-bottom:8px">{{ xAlbumLabel }}</div>
+          <h1 style="font-size:44px;font-weight:800;letter-spacing:-.02em;line-height:1;margin-bottom:12px">{{ album.title }}</h1>
+          <div style="font-size:15px;color:#c3d0d9;margin-bottom:22px">{{ album.artist }} · {{ album.year }} · {{ album.trackCount }} {{ xTracks }}</div>
+          <div style="display:flex;gap:11px">
+            <button onClick="{{ album.onPlay }}" style="display:flex;align-items:center;gap:9px;padding:13px 30px;border:none;border-radius:8px;background:var(--accent,#22d3d3);color:#08131a;font-family:Figtree;font-size:15px;font-weight:800;cursor:pointer"><span style="display:flex"><i data-lucide="play"></i></span> {{ xPlayAll }}</button>
+            <button onClick="{{ album.onPlay }}" style="display:flex;align-items:center;gap:8px;padding:13px 22px;border:1.5px solid rgba(195,208,217,.4);border-radius:8px;background:transparent;color:#fff;font-family:Figtree;font-size:14px;font-weight:700;cursor:pointer" style-hover="border-color:#fff"><i data-lucide="shuffle"></i> {{ xShuffle }}</button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ tracks }}" as="tk" hint-placeholder-count="10">
+          <div onClick="{{ tk.onPlay }}" style="display:grid;grid-template-columns:32px 1fr auto auto;gap:16px;align-items:center;padding:12px 12px;border-radius:9px;cursor:pointer" style-hover="background:rgba(255,255,255,.04)">
+            <div style="color:#5b6b78;font-size:14px;font-weight:600;text-align:center">{{ tk.n }}</div>
+            <div style="min-width:0"><div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tk.title }}</div><div style="font-size:11.5px;color:#8197a4">{{ album.artist }}</div></div>
+            <div style="font-size:12px;color:#5b6b78">{{ tk.plays }}</div>
+            <div style="font-size:12.5px;color:#8197a4;font-variant-numeric:tabular-nums">{{ tk.dur }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== PERSON ===== -->
+    <sc-if value="{{ isPerson }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:34px 40px 80px;animation:jnFade .3s ease both">
+      <div style="display:flex;gap:30px;margin-bottom:38px;flex-wrap:wrap">
+        <div style="{{ person.boxStyle }}"></div>
+        <div style="flex:1;min-width:280px">
+          <h1 style="font-size:40px;font-weight:800;letter-spacing:-.02em;margin-bottom:10px">{{ person.name }}</h1>
+          <div style="font-size:13.5px;color:#8197a4;margin-bottom:18px">{{ xBorn }} {{ person.born }} · {{ person.role }}</div>
+          <p style="font-size:15px;line-height:1.65;color:#a7b7c1;max-width:720px;text-wrap:pretty">{{ person.bio }}</p>
+        </div>
+      </div>
+      <h3 style="font-size:18px;font-weight:700;margin-bottom:16px">{{ xFilmography }}</h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(176px,1fr));gap:18px">
+        <sc-for list="{{ person.films }}" as="item" hint-placeholder-count="8">
+          <div onClick="{{ item.onOpen }}" style="cursor:pointer;transition:transform .18s">
+            <div style="position:relative;aspect-ratio:2/3;border-radius:var(--radius,8px);overflow:hidden;background:#1b2833;margin-bottom:8px"><div style="{{ item.fill }}"></div><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,rgba(8,15,20,.8))"></div></div>
+            <div style="font-size:13.5px;font-weight:700;line-height:1.2">{{ item.title }}</div>
+            <div style="font-size:11.5px;color:#8197a4;margin-top:2px">{{ item.year }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== MY STUFF ===== -->
+    <sc-if value="{{ isMyStuff }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:30px 40px 80px;animation:jnFade .3s ease both">
+      <h1 style="font-size:34px;font-weight:800;letter-spacing:-.02em;margin-bottom:20px">{{ xMyStuffTitle }}</h1>
+      <div style="display:flex;gap:4px;border-bottom:1px solid rgba(129,151,164,.16);margin-bottom:26px;flex-wrap:wrap">
+        <sc-for list="{{ myTabs }}" as="mt" hint-placeholder-count="5"><button onClick="{{ mt.onClick }}" style="{{ mt.style }}">{{ mt.label }}</button></sc-for>
+      </div>
+      <sc-if value="{{ myGrid }}" hint-placeholder-val="{{ true }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:20px">
+        <sc-for list="{{ myItems }}" as="item" hint-placeholder-count="10">
+          <div onClick="{{ item.onOpen }}" style="cursor:pointer;transition:transform .18s">
+            <div style="position:relative;aspect-ratio:2/3;border-radius:var(--radius,8px);overflow:hidden;background:#1b2833;margin-bottom:9px"><div style="{{ item.fill }}"></div><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 58%,rgba(8,15,20,.85))"></div><span style="position:absolute;top:9px;left:9px;font-size:10px;font-weight:700;color:#c3d0d9;background:rgba(8,15,20,.55);padding:3px 7px;border-radius:5px">{{ item.kindTr }}</span></div>
+            <div style="font-size:14px;font-weight:700;line-height:1.25">{{ item.title }}</div>
+            <div style="font-size:11.5px;color:#8197a4;margin-top:2px">{{ item.year }} · {{ item.genre }}</div>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+      <sc-if value="{{ myDownloads }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ downloads }}" as="dl" hint-placeholder-count="4">
+          <div style="display:flex;gap:16px;align-items:center;padding:13px;border-radius:12px;background:#17212b;border:1px solid rgba(129,151,164,.12)">
+            <div style="flex:none;width:110px;aspect-ratio:16/9;border-radius:8px;overflow:hidden;position:relative"><div style="{{ dl.fill }}"></div></div>
+            <div style="flex:1;min-width:0"><div style="font-size:14.5px;font-weight:700">{{ dl.title }}</div><div style="font-size:12px;color:#8197a4">{{ dl.meta }}</div><div style="margin-top:7px;height:4px;border-radius:4px;background:rgba(129,151,164,.2)"><div style="{{ dl.bar }}"></div></div></div>
+            <span style="flex:none;font-size:12px;font-weight:700;color:var(--accent,#22d3d3)">{{ dl.status }}</span>
+            <button style="flex:none;width:38px;height:38px;border-radius:9px;border:none;background:rgba(129,151,164,.14);color:#c3d0d9;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,77,94,.2);color:#ff8a95"><i data-lucide="trash-2"></i></button>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+      <sc-if value="{{ myCards }}" hint-placeholder-val="{{ false }}">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px">
+        <sc-for list="{{ collCards }}" as="c" hint-placeholder-count="6">
+          <div onClick="{{ c.onOpen }}" style="position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;cursor:pointer;background:#1b2833">
+            <div style="{{ c.fill }}"></div>
+            <div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(8,15,20,.9))"></div>
+            <div style="position:absolute;left:16px;bottom:14px"><div style="font-size:17px;font-weight:800">{{ c.name }}</div><div style="font-size:12px;color:#a7b7c1;margin-top:2px">{{ c.count }}</div></div>
+            <span style="position:absolute;top:12px;right:12px;color:#fff;font-size:18px;display:flex"><i data-lucide="{{ c.icon }}"></i></span>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+    </div>
+    </sc-if>
+
+    <!-- ===== COLLECTION ===== -->
+    <sc-if value="{{ isCollection }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:34px 40px 80px;animation:jnFade .3s ease both">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px">
+        <button onClick="{{ back }}" style="width:40px;height:40px;border-radius:9px;border:none;background:rgba(129,151,164,.14);color:#c3d0d9;cursor:pointer;font-size:19px;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(129,151,164,.24)"><i data-lucide="chevron-left"></i></button>
+        <h1 style="font-size:34px;font-weight:800;letter-spacing:-.02em">{{ collTitle }}</h1>
+        <div style="margin-left:auto;font-size:13.5px;color:#8197a4">{{ collCount }} {{ tItems }}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:20px">
+        <sc-for list="{{ collItems }}" as="item" hint-placeholder-count="10">
+          <div onClick="{{ item.onOpen }}" style="cursor:pointer;transition:transform .18s">
+            <div style="position:relative;aspect-ratio:2/3;border-radius:var(--radius,8px);overflow:hidden;background:#1b2833;margin-bottom:9px"><div style="{{ item.fill }}"></div><div style="position:absolute;inset:0;background:linear-gradient(180deg,transparent 58%,rgba(8,15,20,.85))"></div></div>
+            <div style="font-size:14px;font-weight:700;line-height:1.25">{{ item.title }}</div>
+            <div style="font-size:11.5px;color:#8197a4;margin-top:2px">{{ item.year }} · {{ item.genre }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ===== PREFERENCES ===== -->
+    <sc-if value="{{ isPrefs }}" hint-placeholder-val="{{ false }}">
+    <div style="padding:34px 40px 80px;max-width:840px;animation:jnFade .3s ease both">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:30px">
+        <div style="width:60px;height:60px;border-radius:14px;background:radial-gradient(circle at 35% 30%, #2bd4c6, #157a9e);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:800;flex:none">M</div>
+        <div><h1 style="font-size:30px;font-weight:800;letter-spacing:-.02em">{{ xPrefsTitle }}</h1><div style="font-size:13.5px;color:#8197a4;margin-top:2px">Mugur · mugur@jellynext.local</div></div>
+      </div>
+      <sc-for list="{{ prefsSections }}" as="sec" hint-placeholder-count="4">
+        <div style="margin-bottom:26px">
+          <h3 style="font-size:13px;font-weight:800;letter-spacing:.08em;color:var(--accent,#22d3d3);margin-bottom:10px">{{ sec.title }}</h3>
+          <div style="background:#17212b;border:1px solid rgba(129,151,164,.12);border-radius:14px;padding:6px 22px">
+            <sc-for list="{{ sec.rows }}" as="g" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:20px;padding:16px 0;border-bottom:1px solid rgba(129,151,164,.08)">
+                <div style="flex:1"><div style="font-size:14.5px;font-weight:700;margin-bottom:2px">{{ g.title }}</div><div style="font-size:12.5px;color:#8197a4;line-height:1.4">{{ g.desc }}</div></div>
+                <div style="flex:none">
+                  <sc-if value="{{ g.isToggle }}" hint-placeholder-val="{{ true }}"><div onClick="{{ g.onToggle }}" style="{{ g.toggleStyle }}"><div style="width:20px;height:20px;border-radius:50%;background:#fff"></div></div></sc-if>
+                  <sc-if value="{{ g.isValue }}" hint-placeholder-val="{{ false }}"><span style="font-size:13px;font-weight:700;color:#c3d0d9;padding:8px 15px;border-radius:8px;background:rgba(129,151,164,.12)">{{ g.value }}</span></sc-if>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+      <button onClick="{{ back }}" style="display:flex;align-items:center;gap:8px;padding:12px 22px;border:1px solid rgba(129,151,164,.24);border-radius:9px;background:transparent;color:#c3d0d9;font-family:Figtree;font-size:14px;font-weight:700;cursor:pointer" style-hover="background:rgba(255,255,255,.05)"><i data-lucide="log-out"></i> {{ xSignOut }}</button>
+    </div>
+    </sc-if>
+
+  </main>
+
+  <!-- ===== NOW PLAYING BAR ===== -->
+  <sc-if value="{{ npActive }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:none;height:72px;display:flex;align-items:center;gap:16px;padding:0 24px;background:#141d26;border-top:1px solid rgba(129,151,164,.16);z-index:15">
+    <div style="display:flex;align-items:center;gap:12px;width:240px;min-width:0">
+      <div style="flex:none;width:48px;height:48px;border-radius:8px;overflow:hidden;position:relative"><div style="{{ np.fill }}"></div></div>
+      <div style="min-width:0"><div style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ np.title }}</div><div style="font-size:11.5px;color:#8197a4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ np.artist }}</div></div>
+      <button style="flex:none;width:32px;height:32px;border:none;background:none;color:#8197a4;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="color:var(--accent,#22d3d3)"><i data-lucide="heart"></i></button>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;max-width:560px;margin:0 auto">
+      <div style="display:flex;align-items:center;gap:20px">
+        <button style="width:32px;height:32px;border:none;background:none;color:#c3d0d9;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center"><i data-lucide="shuffle"></i></button>
+        <button style="width:34px;height:34px;border:none;background:none;color:#f1f3f5;cursor:pointer;font-size:19px;display:flex;align-items:center;justify-content:center"><i data-lucide="skip-back"></i></button>
+        <button onClick="{{ npToggle }}" style="width:40px;height:40px;border-radius:50%;border:none;background:#fff;color:#0f171e;cursor:pointer;font-size:19px;display:flex;align-items:center;justify-content:center"><i data-lucide="{{ npIcon }}"></i></button>
+        <button style="width:34px;height:34px;border:none;background:none;color:#f1f3f5;cursor:pointer;font-size:19px;display:flex;align-items:center;justify-content:center"><i data-lucide="skip-forward"></i></button>
+        <button style="width:32px;height:32px;border:none;background:none;color:#c3d0d9;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center"><i data-lucide="repeat"></i></button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;width:100%">
+        <span style="font-size:11px;color:#8197a4;font-variant-numeric:tabular-nums">1:12</span>
+        <div style="flex:1;height:4px;border-radius:4px;background:rgba(129,151,164,.25);position:relative"><div style="{{ np.bar }}"></div></div>
+        <span style="font-size:11px;color:#8197a4;font-variant-numeric:tabular-nums">3:48</span>
+      </div>
+    </div>
+    <div style="width:240px;display:flex;align-items:center;justify-content:flex-end;gap:12px">
+      <button style="width:32px;height:32px;border:none;background:none;color:#8197a4;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center" style-hover="color:#f1f3f5"><i data-lucide="list-music"></i></button>
+      <button style="width:32px;height:32px;border:none;background:none;color:#8197a4;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center" style-hover="color:#f1f3f5"><i data-lucide="volume-2"></i></button>
+      <div style="width:80px;height:4px;border-radius:4px;background:rgba(129,151,164,.25);position:relative"><div style="position:absolute;left:0;top:0;bottom:0;width:70%;border-radius:4px;background:#c3d0d9"></div></div>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ============ PLAYER ============ -->
+<sc-if value="{{ isPlayer }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;inset:0;background:#000;overflow:hidden">
+  <div style="{{ detail.backdrop }}"></div>
+  <div style="position:absolute;inset:0;background:radial-gradient(120% 100% at 50% 42%, rgba(0,0,0,.3), rgba(0,0,0,.86))"></div>
+  <div style="position:absolute;top:0;left:0;right:0;padding:26px 34px;display:flex;align-items:center;gap:18px;background:linear-gradient(180deg,rgba(0,0,0,.7),transparent)">
+    <button onClick="{{ back }}" style="width:44px;height:44px;border-radius:10px;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.22)"><i data-lucide="chevron-left"></i></button>
+    <div><div style="font-size:19px;font-weight:800">{{ detail.title }}</div><div style="font-size:12.5px;color:#a7b7c1;margin-top:2px">{{ playerSub }}</div></div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:9px"><span style="font-size:11.5px;font-weight:700;border:1px solid rgba(195,208,217,.4);border-radius:5px;padding:4px 8px;color:var(--accent,#22d3d3)">{{ detail.quality }}</span></div>
+  </div>
+  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:52px">
+    <button onClick="{{ seekBack }}" style="width:58px;height:58px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:25px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.2)"><i data-lucide="rotate-ccw"></i></button>
+    <button onClick="{{ togglePlay }}" style="width:86px;height:86px;border-radius:50%;border:none;background:#fff;color:#0f171e;font-size:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 12px 46px rgba(0,0,0,.5)"><i data-lucide="{{ playIcon }}"></i></button>
+    <button onClick="{{ seekFwd }}" style="width:58px;height:58px;border-radius:50%;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:25px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.2)"><i data-lucide="rotate-cw"></i></button>
+  </div>
+  <sc-if value="{{ pmOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;right:40px;bottom:120px;width:308px;max-height:58vh;overflow-y:auto;background:rgba(15,23,30,.97);border:1px solid rgba(129,151,164,.2);border-radius:14px;padding:12px;box-shadow:0 20px 60px rgba(0,0,0,.6);z-index:30">
+    <sc-if value="{{ pmSubs }}" hint-placeholder-val="{{ true }}">
+    <div>
+      <div style="font-size:11.5px;font-weight:800;letter-spacing:.06em;color:#8197a4;margin:4px 8px 6px">{{ xSubsLabel }}</div>
+      <sc-for list="{{ pmSubList }}" as="o" hint-placeholder-count="4">
+        <div onClick="{{ o.onClick }}" style="display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;cursor:pointer" style-hover="background:rgba(255,255,255,.06)">
+          <span style="width:16px;flex:none;color:var(--accent,#22d3d3);display:flex;font-size:15px"><sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><i data-lucide="check"></i></sc-if></span>
+          <span style="flex:1;font-size:13px;font-weight:600;color:#f1f3f5">{{ o.label }}</span>
+        </div>
+      </sc-for>
+      <div style="height:1px;background:rgba(129,151,164,.14);margin:9px 4px"></div>
+      <div style="font-size:11.5px;font-weight:800;letter-spacing:.06em;color:#8197a4;margin:4px 8px 6px">{{ xAudioLabel }}</div>
+      <sc-for list="{{ pmAudList }}" as="o" hint-placeholder-count="4">
+        <div onClick="{{ o.onClick }}" style="display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;cursor:pointer" style-hover="background:rgba(255,255,255,.06)">
+          <span style="width:16px;flex:none;color:var(--accent,#22d3d3);display:flex;font-size:15px"><sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><i data-lucide="check"></i></sc-if></span>
+          <span style="flex:1;font-size:13px;font-weight:600;color:#f1f3f5">{{ o.lang }}</span>
+          <span style="font-size:11px;color:#8197a4;flex:none">{{ o.codec }}</span>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+    <sc-if value="{{ pmQuality }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div style="font-size:11.5px;font-weight:800;letter-spacing:.06em;color:#8197a4;margin:4px 8px 6px">{{ xQuality }}</div>
+      <sc-for list="{{ qualityOpts }}" as="o" hint-placeholder-count="5">
+        <div onClick="{{ o.onClick }}" style="display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;cursor:pointer" style-hover="background:rgba(255,255,255,.06)">
+          <span style="width:16px;flex:none;color:var(--accent,#22d3d3);display:flex;font-size:15px"><sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><i data-lucide="check"></i></sc-if></span>
+          <span style="flex:1;font-size:13px;font-weight:600;color:#f1f3f5">{{ o.label }}</span>
+        </div>
+      </sc-for>
+      <div style="height:1px;background:rgba(129,151,164,.14);margin:9px 4px"></div>
+      <div style="font-size:11.5px;font-weight:800;letter-spacing:.06em;color:#8197a4;margin:4px 8px 6px">{{ xSpeed }}</div>
+      <sc-for list="{{ speedOpts }}" as="o" hint-placeholder-count="6">
+        <div onClick="{{ o.onClick }}" style="display:flex;align-items:center;gap:10px;padding:9px 8px;border-radius:8px;cursor:pointer" style-hover="background:rgba(255,255,255,.06)">
+          <span style="width:16px;flex:none;color:var(--accent,#22d3d3);display:flex;font-size:15px"><sc-if value="{{ o.on }}" hint-placeholder-val="{{ false }}"><i data-lucide="check"></i></sc-if></span>
+          <span style="flex:1;font-size:13px;font-weight:600;color:#f1f3f5">{{ o.label }}</span>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+  </div>
+  </sc-if>
+  <div style="position:absolute;bottom:0;left:0;right:0;padding:28px 40px 32px;background:linear-gradient(0deg,rgba(0,0,0,.86),transparent)">
+    <div style="display:flex;align-items:center;gap:15px;margin-bottom:15px">
+      <span style="font-size:12.5px;font-weight:600;color:#c3d0d9;font-variant-numeric:tabular-nums;flex:none">{{ curTime }}</span>
+      <div onClick="{{ seek }}" style="flex:1;height:6px;border-radius:6px;background:rgba(255,255,255,.2);position:relative;cursor:pointer">
+        <div style="{{ bufferedStyle }}"></div>
+        <div style="{{ progressStyle }}"></div>
+        <div style="{{ thumbStyle }}"></div>
+      </div>
+      <span style="font-size:12.5px;font-weight:600;color:#8197a4;font-variant-numeric:tabular-nums;flex:none">{{ totalTime }}</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onClick="{{ togglePlay }}" style="width:44px;height:44px;border-radius:10px;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.2)"><i data-lucide="{{ playIcon }}"></i></button>
+      <div style="display:flex;align-items:center;gap:10px;padding:0 8px">
+        <button onClick="{{ toggleMute }}" style="width:40px;height:40px;border:none;background:none;color:#fff;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:center"><i data-lucide="{{ volIcon }}"></i></button>
+        <div style="width:92px;height:5px;border-radius:5px;background:rgba(255,255,255,.2);position:relative"><div style="{{ volStyle }}"></div></div>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+        <button style="display:flex;align-items:center;gap:7px;height:44px;padding:0 14px;border-radius:10px;border:none;background:rgba(255,255,255,.08);color:#fff;font-family:Figtree;font-size:12.5px;font-weight:600;cursor:pointer" style-hover="background:rgba(255,255,255,.16)"><i data-lucide="scan-face"></i> {{ tSceneInfo }}</button>
+        <button onClick="{{ mSubs }}" style="display:flex;align-items:center;gap:7px;height:44px;padding:0 14px;border-radius:10px;border:none;background:rgba(255,255,255,.08);color:#fff;font-family:Figtree;font-size:12.5px;font-weight:600;cursor:pointer" style-hover="background:rgba(255,255,255,.16)"><i data-lucide="captions"></i> {{ tSubtitles }}</button>
+        <button onClick="{{ mQuality }}" style="width:44px;height:44px;border-radius:10px;border:none;background:rgba(255,255,255,.08);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.16)"><i data-lucide="settings"></i></button>
+        <button style="width:44px;height:44px;border-radius:10px;border:none;background:rgba(255,255,255,.08);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.16)"><i data-lucide="picture-in-picture-2"></i></button>
+        <button style="width:44px;height:44px;border-radius:10px;border:none;background:rgba(255,255,255,.08);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center" style-hover="background:rgba(255,255,255,.16)"><i data-lucide="maximize"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#4d9fff&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;,&quot;options&quot;:[&quot;#4d9fff&quot;,&quot;#22d3d3&quot;,&quot;#00a8e1&quot;,&quot;#2bb7ff&quot;,&quot;#5eead4&quot;]},&quot;accent2&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#2563eb&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;,&quot;options&quot;:[&quot;#2563eb&quot;,&quot;#1e9bd7&quot;,&quot;#0e7490&quot;,&quot;#0891b2&quot;]},&quot;radius&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:8,&quot;min&quot;:0,&quot;max&quot;:20,&quot;step&quot;:1,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;showRatings&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Content&quot;}}">
+class Component extends DCLogic {
+  state = { screen:'login', nav:'home', selected:null, back:'home', playing:true, progress:0.34, volume:0.75, muted:false, season:1, setTab:'dashboard', detailTab:'episodes', lang:'en', heroIdx:0, toggles:{}, q:'', searchType:'all', album:null, person:null, coll:null, liveTab:'guide', myTab:'watchlist', np:null, npPlaying:true, mediaVersion:0, mediaAudio:0, playerMenu:null };
+
+  setRoot = (el)=>{ this.rootEl=el; this.applyVars(); };
+  setContent = (el)=>{ this.contentEl=el; };
+  applyVars(){ const p=this.props||{}; const els=[document.documentElement]; if(this.rootEl) els.push(this.rootEl); for(const el of els){ el.style.setProperty('--accent', p.accent||'#4d9fff'); el.style.setProperty('--accent2', p.accent2||'#2563eb'); el.style.setProperty('--radius', (p.radius==null?8:p.radius)+'px'); } }
+  icons(){ if(window.lucide){ try{ window.lucide.createIcons(); }catch(e){} } else { clearTimeout(this._it); this._it=setTimeout(()=>this.icons(),140); } }
+  componentDidMount(){ this.applyVars(); this.icons(); this._hero=setInterval(()=>{ if(this.state.screen==='home') this.setState(st=>({heroIdx:(st.heroIdx+1)%3})); }, 7000); }
+  componentDidUpdate(){ this.applyVars(); this.icons(); }
+  componentWillUnmount(){ clearInterval(this._hero); clearTimeout(this._it); }
+  resetScroll(){ if(this.contentEl) this.contentEl.scrollTop=0; }
+
+  navTo(nav){ const map={home:'home',movies:'library',series:'library',music:'music',live:'livetv',mystuff:'mystuff'}; this.setState({nav, screen:map[nav]||'home'}); this.resetScroll(); }
+  openDetail(it){ this.setState({selected:it, back:this.state.screen, screen:'detail', season:1, detailTab:'episodes'}); this.resetScroll(); }
+  play(){ this.setState({screen:'player', playing:true}); }
+  goBack(){ this.setState({screen:this.state.back||'home'}); this.resetScroll(); }
+  enter(){ this.setState({screen:'home', nav:'home'}); this.resetScroll(); }
+  openSearch(){ this.setState({back:this.state.screen, screen:'search'}); this.resetScroll(); }
+  openPrefs(){ this.setState({back:this.state.screen, screen:'prefs'}); this.resetScroll(); }
+  openAlbum(al){ this.setState({album:al, back:this.state.screen, screen:'album'}); this.resetScroll(); }
+  openPerson(pc){ this.setState({person:pc, back:this.state.screen, screen:'person'}); this.resetScroll(); }
+  openCollection(c){ this.setState({coll:c, back:this.state.screen, screen:'collection'}); this.resetScroll(); }
+  playTrack(tk){ this.setState({np:tk, npPlaying:true}); }
+
+  hueFill(h){ return {position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'#1b2833',backgroundImage:`url("https://picsum.photos/seed/jnp${h}/400/600"), linear-gradient(155deg, oklch(0.5 0.15 ${h}), oklch(0.26 0.11 ${(h+50)%360}))`,backgroundSize:'cover',backgroundPosition:'center'}; }
+  bigFill(h){ return {position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'#0f171e',backgroundImage:`url("https://picsum.photos/seed/jnb${h}/1280/720"), linear-gradient(115deg, oklch(0.42 0.14 ${h}), oklch(0.18 0.06 ${(h+35)%360}))`,backgroundSize:'cover',backgroundPosition:'center'}; }
+  cellFill(h){ return {position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'#1b2833',backgroundImage:`url("https://picsum.photos/seed/jnc${h}/640/400"), linear-gradient(150deg, oklch(0.5 0.15 ${h}), oklch(0.3 0.12 ${(h+50)%360}))`,backgroundSize:'cover',backgroundPosition:'center'}; }
+  avatarFill(h){ return {background:`radial-gradient(circle at 35% 30%, oklch(0.62 0.14 ${h}), oklch(0.32 0.09 ${(h+40)%360}))`}; }
+  faceFill(h){ return {backgroundColor:'#1b2833',backgroundImage:`url("https://i.pravatar.cc/240?img=${(h%70)+1}")`,backgroundSize:'cover',backgroundPosition:'center'}; }
+
+  dict(){
+    return {
+      en:{
+        who:"Who's watching?", other:"Use a different account", connected:"media.jellynext.local · Connected to Jellyfin server",
+        nav:{home:"Home",movies:"Movies",series:"TV Shows",music:"Music",live:"Live TV",mystuff:"My Stuff"},
+        search:"Search",
+        included:"Included", includedShort:"Included",
+        rows:{continue:"Continue Watching",originals:"JellyNext Originals",recent:"Recently Added",trending:"Trending Now",movies:"Movies We Think You'll Love",series:"Binge-Worthy Series"},
+        seeAll:"See all", play:"Play", details:"Details", watchlist:"Watchlist",
+        libraryKicker:"LIBRARY", items:"titles", sort:"Sort: Recently Added", filter:"Filters",
+        filters:["All","Movies","TV Shows","Unwatched","Top Rated"],
+        titles:{movies:"Movies",series:"TV Shows",live:"Live TV",mystuff:"My Stuff",library:"Library"},
+        kind:{Movie:"Movie",Series:"Series"},
+        genres:{drama:"Drama",scifi:"Sci-Fi",thriller:"Thriller",crime:"Crime",adventure:"Adventure",romance:"Romance",horror:"Horror",western:"Western",fantasy:"Fantasy",mystery:"Mystery",action:"Action"},
+        overview:"An astronomer searching for her lost daughter in quantum signals comes face to face with time itself. A personal loss unravels into a universal secret as memory and reality blur.",
+        detailTabs:{episodes:"Episodes",related:"Related",details:"Details",cast:"Cast & Scenes"},
+        facts:{genre:"Genres",released:"Released",imdb:"IMDb Rating",studio:"Studio",language:"Audio languages",subtitles:"Subtitles",codec:"Video",director:"Directors"},
+        studio:"JellyNext Originals", director:"Vera Lindqvist",
+        cast:"Cast", scenes:"Scenes & X-Ray", scenesDesc:"Jump to key moments and see who's on screen.",
+        season:"Season",
+        adminKicker:"ADMIN", serverPanel:"Server Dashboard",
+        tabs:{dashboard:"Overview",libraries:"Libraries",users:"Users",playback:"Playback",network:"Network",plugins:"Plugins",logs:"Logs"},
+        statsLabel:["Server Status","Active Streams","Total Titles","Storage"],
+        statsValue:["Online","3","12,480","8.2 TB"], statsDelta:["99.9%","24 Mbps","+128 this week","/ 12 TB"],
+        activeStreams:"Active Streams", sessions:"3 sessions · 24 Mbps", recentActivity:"Recent Activity",
+        librariesTitle:"Libraries", addLibrary:"Add Library", usersTitle:"Users", addUser:"Add User",
+        userCols:["USER","LAST SEEN","WATCH TIME","ROLE"],
+        roles:{admin:"Administrator",user:"User",kid:"Kids"},
+        modes:{direct:"Direct Stream",transcode:"Transcode 1080p",play:"Direct Play"},
+        lastSeen:{now:"Active now",min:"2 min ago",day:"Yesterday",days:"3 days ago"}, hours:"h",
+        libNames:["Movies","TV Shows","Music","Live TV","Books","Photos"],
+        libCounts:["4,210 titles","842 shows · 18.9K episodes","6,320 albums","126 channels · DVR","1,140 items","22,480 items"],
+        activity:["Deniz signed in","“Cobalt Dreams” was added to the library","Movies library scanned · 128 new titles","Transcode warning: hardware acceleration is off","New user “Kaan” was created"],
+        subtitles:"Subtitles & Audio", sceneInfo:"Scene Info",
+        generic:{
+          libraries:[["New content notifications","Notify when titles are added to a library",true],["Auto-create collections","Group franchise films into collections",true],["Artwork quality","Poster and backdrop resolution","Original"]],
+          playback:[["Hardware acceleration (VA-API)","Reduce CPU load with GPU transcoding",true],["Allowed transcode quality","Upper limit for clients","4K · 120 Mbps"],["Burn-in subtitles","Embed subtitles for incompatible clients",false],["Scene thumbnails","Preview thumbnails on the timeline",true],["Stream concurrency limit","Simultaneous playbacks per user","3 streams"]],
+          network:[["Remote access","Allow connections from outside the local network",true],["Force HTTPS","Route all connections over TLS",true],["Listen port","Ports the server listens on","8920 / 8096"],["Bandwidth limit","Upper limit for remote streams","40 Mbps"]],
+          plugins:[["Trakt Sync","Sync watch history with Trakt",true],["Intro Skipper","Auto-skip intros and recaps",true],["TMDb Metadata","Source for artwork and metadata","v4 · Active"],["Auto library scan","Periodically scan for new files","Every 6 hours"]],
+          logs:[["Log level","Log verbosity","Info"],["Export logs","Download the last 7 days of logs","Download"],["Anonymous usage data","Send stats to help improve the app",false]],
+        },
+      },
+      tr:{
+        who:"Kim izliyor?", other:"Farklı hesap kullan", connected:"media.jellynext.local · Jellyfin sunucusuna bağlı",
+        nav:{home:"Ana Sayfa",movies:"Filmler",series:"Diziler",music:"Müzik",live:"Canlı TV",mystuff:"Benim İçin"},
+        search:"Ara",
+        included:"Dahil", includedShort:"Dahil",
+        rows:{continue:"Kaldığın Yerden Devam Et",originals:"JellyNext Özgün",recent:"Yeni Eklenenler",trending:"Şu An Trend",movies:"Beğeneceğini Düşündüğümüz Filmler",series:"Soluksuz İzlenen Diziler"},
+        seeAll:"Tümünü gör", play:"Oynat", details:"Detaylar", watchlist:"Listeme Ekle",
+        libraryKicker:"KÜTÜPHANE", items:"başlık", sort:"Sırala: Yeni Eklenen", filter:"Filtreler",
+        filters:["Tümü","Filmler","Diziler","İzlenmemiş","En Yüksek Puan"],
+        titles:{movies:"Filmler",series:"Diziler",live:"Canlı TV",mystuff:"Benim İçin",library:"Kütüphane"},
+        kind:{Movie:"Film",Series:"Dizi"},
+        genres:{drama:"Dram",scifi:"Bilim Kurgu",thriller:"Gerilim",crime:"Suç",adventure:"Macera",romance:"Romantik",horror:"Korku",western:"Western",fantasy:"Fantastik",mystery:"Gizem",action:"Aksiyon"},
+        overview:"Kayıp kızını kuantum sinyallerinde arayan bir gökbilimci, zamanın kendisiyle yüzleşir. Kişisel bir kayıp, hafıza ve gerçeklik birbirine karışırken evrensel bir sırra dönüşür.",
+        detailTabs:{episodes:"Bölümler",related:"Benzerleri",details:"Detaylar",cast:"Oyuncular ve Sahneler"},
+        facts:{genre:"Türler",released:"Çıkış",imdb:"IMDb Puanı",studio:"Stüdyo",language:"Ses dilleri",subtitles:"Altyazılar",codec:"Görüntü",director:"Yönetmen"},
+        studio:"JellyNext Özgün", director:"Vera Lindqvist",
+        cast:"Oyuncular", scenes:"Sahneler ve X-Ray", scenesDesc:"Önemli anlara atla ve ekrandaki oyuncuları gör.",
+        season:"Sezon",
+        adminKicker:"YÖNETİM", serverPanel:"Sunucu Paneli",
+        tabs:{dashboard:"Genel Bakış",libraries:"Kütüphaneler",users:"Kullanıcılar",playback:"Oynatma",network:"Ağ",plugins:"Eklentiler",logs:"Kayıtlar"},
+        statsLabel:["Sunucu Durumu","Aktif Yayın","Toplam Başlık","Depolama"],
+        statsValue:["Çevrimiçi","3","12.480","8,2 TB"], statsDelta:["%99,9","24 Mbps","+128 bu hafta","/ 12 TB"],
+        activeStreams:"Aktif Yayınlar", sessions:"3 oturum · 24 Mbps", recentActivity:"Son Etkinlik",
+        librariesTitle:"Kütüphaneler", addLibrary:"Kütüphane Ekle", usersTitle:"Kullanıcılar", addUser:"Kullanıcı Ekle",
+        userCols:["KULLANICI","SON GÖRÜLME","İZLEME","ROL"],
+        roles:{admin:"Yönetici",user:"Kullanıcı",kid:"Çocuk"},
+        modes:{direct:"Doğrudan Akış",transcode:"Transkod 1080p",play:"Doğrudan Oynatma"},
+        lastSeen:{now:"Şu an aktif",min:"2 dk önce",day:"Dün",days:"3 gün önce"}, hours:"saat",
+        libNames:["Filmler","Diziler","Müzik","Canlı TV","Kitaplar","Fotoğraflar"],
+        libCounts:["4.210 başlık","842 dizi · 18,9B bölüm","6.320 albüm","126 kanal · DVR","1.140 öğe","22.480 öğe"],
+        activity:["Deniz sisteme giriş yaptı","“Cobalt Dreams” kütüphaneye eklendi","Filmler kütüphanesi tarandı · 128 yeni başlık","Transkod uyarısı: donanım hızlandırma pasif","Yeni kullanıcı “Kaan” oluşturuldu"],
+        subtitles:"Altyazı ve Ses", sceneInfo:"Sahne Bilgisi",
+        generic:{
+          libraries:[["Yeni içerik bildirimleri","Kütüphaneye başlık eklendiğinde bildir",true],["Koleksiyonları otomatik oluştur","Seri filmleri koleksiyonlarda grupla",true],["Görsel kalitesi","Afiş ve arka plan çözünürlüğü","Orijinal"]],
+          playback:[["Donanım hızlandırma (VA-API)","GPU transkod ile CPU yükünü azalt",true],["İzin verilen transkod kalitesi","İstemci için üst sınır","4K · 120 Mbps"],["Altyazı yakma","Uyumsuz istemcilerde altyazıyı göm",false],["Sahne küçük resimleri","Zaman çizelgesinde önizleme",true],["Akış eşzamanlılık sınırı","Kullanıcı başına aynı anda oynatma","3 akış"]],
+          network:[["Uzaktan erişim","Yerel ağ dışından bağlantılara izin ver",true],["HTTPS zorunlu","Tüm bağlantıları TLS üzerinden yönlendir",true],["Dinleme portu","Sunucunun dinlediği portlar","8920 / 8096"],["Bant genişliği sınırı","Uzak akışlar için üst sınır","40 Mbps"]],
+          plugins:[["Trakt Senkronizasyonu","İzleme geçmişini Trakt ile eşitle",true],["Intro Atlayıcı","Jenerik ve özetleri otomatik atla",true],["TMDb Metadata","Afiş ve künye kaynağı","v4 · Aktif"],["Otomatik kütüphane taraması","Yeni dosyaları periyodik tara","Her 6 saat"]],
+          logs:[["Kayıt seviyesi","Günlük ayrıntı düzeyi","Bilgi"],["Kayıtları dışa aktar","Son 7 günün günlüklerini indir","İndir"],["Anonim kullanım verisi","Geliştirmeye katkı için istatistik gönder",false]],
+        },
+      },
+    };
+  }
+
+  xd(){ return {
+    en:{ searchPh:"Search movies, shows, people, music…", browseGenres:"Browse by genre", topSearches:"Top searches", noResults:"No results found", people:"People", resultsFor:"Results", movies:"Movies", shows:"TV Shows", music:"Music",
+      typeAll:"All", typeMovies:"Movies", typeShows:"TV Shows", typePeople:"People", typeMusic:"Music",
+      liveTitle:"Live TV", guide:"Guide", channels:"Channels", recordings:"Recordings", onNow:"ON NOW", play:"Play",
+      musicTitle:"Music", recentlyPlayed:"Recently Played", artists:"Artists", albums:"Albums", artistLabel:"Artist", albumLabel:"ALBUM", tracks:"tracks", playAll:"Play", shuffle:"Shuffle",
+      born:"Born", filmography:"Filmography",
+      subAvailable:"Available subtitles", subSearch:"Search online subtitles", download:"Download", active:"Active", enable:"Enable", embedded:"Embedded", subProviders:"OpenSubtitles · Podnapisi · Subscene",
+      versions:"Versions", audioTracks:"Audio tracks", default_:"Default",
+      myStuffTitle:"My Stuff", watchlist:"Watchlist", favorites:"Favorites", downloads:"Downloads", collections:"Collections", playlists:"Playlists",
+      prefsTitle:"Preferences", signOut:"Sign out",
+      scan:"Scan", tuners:"Tuners", addTuner:"Add Tuner", guideProviders:"Guide Providers", installed:"Installed", catalog:"Catalog", install:"Install", enabled:"Enabled", runNow:"Run now", apiKeys:"API Keys", newKey:"New Key", revoke:"Revoke",
+      colDevice:"DEVICE", colUser:"USER", colApp:"APP", colLast:"LAST ACTIVE", colKey:"API KEY", colCreated:"CREATED",
+      tabDevices:"Devices", tabLiveTv:"Live TV", tabTasks:"Scheduled Tasks", tabActivity:"Activity", tabApiKeys:"API Keys", tabNotifications:"Notifications", tabMetadata:"Metadata", tabSubtitles:"Subtitles", tabDlna:"DLNA" },
+    tr:{ searchPh:"Film, dizi, kişi, müzik ara…", browseGenres:"Türe göre gözat", topSearches:"Popüler aramalar", noResults:"Sonuç bulunamadı", people:"Kişiler", resultsFor:"Sonuçlar", movies:"Filmler", shows:"Diziler", music:"Müzik",
+      typeAll:"Tümü", typeMovies:"Filmler", typeShows:"Diziler", typePeople:"Kişiler", typeMusic:"Müzik",
+      liveTitle:"Canlı TV", guide:"Rehber", channels:"Kanallar", recordings:"Kayıtlar", onNow:"ŞİMDİ", play:"Oynat",
+      musicTitle:"Müzik", recentlyPlayed:"Son Çalınanlar", artists:"Sanatçılar", albums:"Albümler", artistLabel:"Sanatçı", albumLabel:"ALBÜM", tracks:"parça", playAll:"Oynat", shuffle:"Karıştır",
+      born:"Doğum", filmography:"Filmografi",
+      subAvailable:"Mevcut altyazılar", subSearch:"Çevrimiçi altyazı ara", download:"İndir", active:"Aktif", enable:"Etkinleştir", embedded:"Gömülü", subProviders:"OpenSubtitles · Podnapisi · Subscene",
+      versions:"Sürümler", audioTracks:"Ses parçaları", default_:"Varsayılan",
+      myStuffTitle:"Benim İçin", watchlist:"İzleme Listesi", favorites:"Favoriler", downloads:"İndirilenler", collections:"Koleksiyonlar", playlists:"Oynatma Listeleri",
+      prefsTitle:"Tercihler", signOut:"Çıkış yap",
+      scan:"Tara", tuners:"Alıcılar", addTuner:"Alıcı Ekle", guideProviders:"Rehber Sağlayıcıları", installed:"Yüklü", catalog:"Katalog", install:"Yükle", enabled:"Etkin", runNow:"Şimdi çalıştır", apiKeys:"API Anahtarları", newKey:"Yeni Anahtar", revoke:"İptal",
+      colDevice:"CİHAZ", colUser:"KULLANICI", colApp:"UYGULAMA", colLast:"SON ETKİNLİK", colKey:"API ANAHTARI", colCreated:"OLUŞTURMA",
+      tabDevices:"Cihazlar", tabLiveTv:"Canlı TV", tabTasks:"Zamanlanmış Görevler", tabActivity:"Etkinlik", tabApiKeys:"API Anahtarları", tabNotifications:"Bildirimler", tabMetadata:"Üstveri", tabSubtitles:"Altyazılar", tabDlna:"DLNA" },
+  }; }
+
+  xg(){ return {
+    en:{
+      notifications:[["Email on errors","Send email when the server logs an error",false],["New content webhook","POST to a URL when items are added",true],["Playback failure alerts","Notify admins on transcode failures",true]],
+      metadata:[["Preferred metadata language","Language for titles and overviews","English"],["Country","Region for ratings and release dates","United States"],["Save artwork with media","Write images next to media files",false],["Automatic refresh","Refresh metadata on a schedule","Every 30 days"]],
+      subtitles:[["Download subtitles automatically","Fetch missing subtitles on scan",true],["Preferred languages","Priority order","English, Türkçe"],["Skip if audio matches","Don't download when audio matches",true],["Provider","Subtitle source","OpenSubtitles"]],
+      dlna:[["Enable DLNA server","Broadcast library to DLNA devices",true],["Blast alive messages","Improve discovery on some networks",false],["Default user","Profile used for DLNA playback","Mugur"]],
+    },
+    tr:{
+      notifications:[["Hatalarda e-posta","Sunucu hata kaydettiğinde e-posta gönder",false],["Yeni içerik webhook","İçerik eklendiğinde bir URL'ye POST et",true],["Oynatma hata uyarıları","Transkod hatalarında yöneticileri uyar",true]],
+      metadata:[["Tercih edilen üstveri dili","Başlık ve özet dili","Türkçe"],["Ülke","Puan ve çıkış tarihi bölgesi","Türkiye"],["Görselleri medyayla kaydet","Görselleri medya dosyalarının yanına yaz",false],["Otomatik yenileme","Üstveriyi periyodik yenile","Her 30 günde"]],
+      subtitles:[["Altyazıları otomatik indir","Tarama sırasında eksik altyazıları getir",true],["Tercih edilen diller","Öncelik sırası","Türkçe, English"],["Ses eşleşirse atla","Ses dili eşleştiğinde indirme",true],["Sağlayıcı","Altyazı kaynağı","OpenSubtitles"]],
+      dlna:[["DLNA sunucusunu etkinleştir","Kütüphaneyi DLNA cihazlarına yayınla",true],["Canlı mesaj yayını","Bazı ağlarda keşfi iyileştir",false],["Varsayılan kullanıcı","DLNA oynatımı için profil","Mugur"]],
+    },
+  }; }
+
+  renderVals(){
+    const s=this.state;
+    const showRatings = (this.props?this.props.showRatings:true) !== false;
+    const L=this.dict(); const t=L[s.lang]||L.en; const tr=s.lang==='tr';
+    const X=this.xd()[s.lang]||this.xd().en; t.generic={...t.generic, ...(this.xg()[s.lang]||this.xg().en)};
+
+    const P=[
+      ['The Glass Meridian',2024,'drama',9.1,285,'Series'],['Nebula Drift',2025,'scifi',8.4,255,'Movie'],
+      ['Ashfall',2025,'thriller',7.8,35,'Movie'],['Neon Harbor',2022,'crime',8.0,320,'Series'],
+      ['Paper Cities',2024,'drama',7.5,55,'Movie'],['Long Way North',2021,'adventure',8.6,150,'Movie'],
+      ['The Quiet Comet',2025,'scifi',7.2,240,'Series'],['Ember & Oak',2023,'romance',8.1,15,'Movie'],
+      ['Static Bloom',2024,'horror',6.9,300,'Movie'],['Ironwood',2022,'western',7.7,80,'Series'],
+      ['Vantablack',2025,'thriller',8.9,275,'Movie'],['Coral Static',2023,'scifi',7.4,195,'Movie'],
+      ['Lantern City',2024,'fantasy',8.3,45,'Series'],['Dust & Gold',2021,'western',7.0,60,'Movie'],
+      ['The Ninth Wave',2025,'drama',8.7,225,'Movie'],['Solstice',2023,'mystery',7.9,150,'Series'],
+      ['Marrow',2024,'horror',7.1,10,'Movie'],['Highwire',2022,'action',8.2,30,'Movie'],
+      ['Cobalt Dreams',2025,'scifi',8.5,250,'Series'],['The Salt Path',2023,'drama',7.6,120,'Movie'],
+    ];
+    const synE="A gripping, beautifully shot story that lingers long after the credits.";
+    const synT="Jenerik bittikten sonra bile aklından çıkmayan, etkileyici ve zarif çekilmiş bir hikaye.";
+    const items=P.map((p,i)=>{ const it={ id:i, title:p[0], year:p[1], genre:t.genres[p[2]], rating:p[3].toFixed(1), hue:p[4], kind:p[5], kindTr:t.kind[p[5]], synopsis: tr?synT:synE, fill:this.hueFill(p[4]) }; it.onOpen=()=>this.openDetail(it); it.onPlay=(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.play(); }; it.onAdd=(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); }; return it; });
+
+    const barGrad={height:'100%',background:'var(--accent,#22d3d3)'};
+    const cwDef=[[0,0.62],[10,0.34],[4,0.15],[15,0.88],[5,0.5]];
+    const cwMeta=tr?['B4 · 12 dk kaldı','1 sa 4 dk kaldı','48 dk kaldı','B7 · 8 dk kaldı','55 dk kaldı']:['E4 · 12 min left','1h 4m left','48 min left','E7 · 8 min left','55 min left'];
+    const cw=cwDef.map(([id,pr],k)=>{ const it=items[id]; return { ...it, isCw:true, meta:cwMeta[k], bar:{...barGrad,width:(pr*100)+'%'} }; });
+
+    const rows=[
+      { title:t.rows.continue, wide:true, poster:false, items:cw },
+      { title:t.rows.originals, wide:true, poster:false, items:[items[18],items[1],items[6],items[11],items[12]].map(x=>({...x,meta:x.year+' · '+x.genre})) },
+      { title:t.rows.recent, wide:false, poster:true, items:items.slice(0,10) },
+      { title:t.rows.trending, wide:true, poster:false, items:items.slice(6,14).map(x=>({...x,meta:x.year+' · '+x.genre})) },
+      { title:t.rows.movies, wide:false, poster:true, items:items.filter(i=>i.kind==='Movie').slice(0,10) },
+      { title:t.rows.series, wide:false, poster:true, items:items.filter(i=>i.kind==='Series') },
+    ];
+
+    const heroSrc=[items[0],items[10],items[18]];
+    const hero0=heroSrc[s.heroIdx%3];
+    const hero={ ...hero0, backdrop:this.bigFill(hero0.hue), typeLine: hero0.kind==='Series'?(tr?'Özgün Dizi':'Original Series'):(tr?'Özgün Film':'Original Film'), runtime: hero0.kind==='Series'?(tr?'2 Sezon':'2 Seasons'):(tr?'2 sa 14 dk':'2h 14m'), maturity:'16+', quality:'4K HDR', overview:t.overview, onOpen:()=>this.openDetail(hero0) };
+    const heroDots=[0,1,2].map(i=>({ onClick:()=>this.setState({heroIdx:i}), style: i===s.heroIdx?{width:'26px',height:'4px',borderRadius:'4px',background:'var(--accent,#22d3d3)',cursor:'pointer',transition:'all .3s'}:{width:'10px',height:'4px',borderRadius:'4px',background:'rgba(195,208,217,.35)',cursor:'pointer',transition:'all .3s'} }));
+
+    const d=s.selected||items[0];
+    const epTitles=['Awakening','Broken Compass','Salt and Ash','Deep Waters','Last Light','Threshold'];
+    const epOv=tr?'Ekip beklenmedik bir keşifle yüzleşirken eski ittifaklar sarsılır ve herkes bir seçim yapmak zorunda kalır.':'The crew faces an unexpected discovery as old alliances fracture and everyone is forced to make a choice.';
+    const episodes=epTitles.map((tl,i)=>({ n:i+1, title:tl, dur:(42+i)+(tr?' dk':' min'), fill:this.cellFill((d.hue+i*22)%360), overview:epOv }));
+    const castRaw=[['Mara Vesik','Dr. Ilen Sable',285],['Cole Ardent','Detective Rourke',20],['Ines Vahl','Captain Ledo',330],['Rem Okan','Young Ledo',150],['Suki Marlo','Ada Vey',45],['Dana Iyer','Margaux',255],['Theo Brant','President Corliss',80],['Nadia Falk','Yara',300]];
+    const cbBase={width:'46px',height:'46px',borderRadius:'10px',flex:'none'};
+    const personBio = tr?'Ödüllü bir oyuncu; yoğun karakter çalışmaları ve cesur rol seçimleriyle tanınır. Bir dizi bağımsız ve gişe yapımında rol aldı.':'An award-winning performer known for intense character work and bold role choices, with credits across independent and blockbuster productions.';
+    const bornYears=['1986','1979','1991','2001','1994','1983','1975','1998'];
+    const mkPerson=(c,i)=>({ name:c[0], role:c[1], born:bornYears[(i||0)%bornYears.length]+(tr?' · İstanbul':' · London'), bio:personBio, boxStyle:{width:'150px',height:'150px',borderRadius:'16px',flex:'none',...this.faceFill(c[2])}, films: items.filter((x,k)=>k%2===0).slice(0,8) });
+    const cast=castRaw.map((c,i)=>{ const o={ name:c[0], role:c[1], boxStyle:{...cbBase,...this.faceFill(c[2])} }; o.onOpen=()=>this.openPerson(mkPerson(c,i)); return o; });
+    const scLabels=tr?['Açılış Sahnesi','İlk Karşılaşma','Kovalamaca','Dönüm Noktası','Final','Jenerik Sonrası']:['Opening Scene','First Encounter','The Chase','Turning Point','Finale','Post-Credits'];
+    const scenes=scLabels.map((lb,i)=>({ label:lb, time:['0:02','0:14','0:31','0:47','1:38','2:11'][i], fill:this.cellFill((d.hue+i*30)%360) }));
+    const facts=[ {k:t.facts.genre,v:d.genre+', '+t.genres.mystery+', '+t.genres.drama}, {k:t.facts.director,v:t.director}, {k:t.facts.released,v:d.year}, {k:t.facts.imdb,v:d.rating+' / 10'}, {k:t.facts.studio,v:t.studio}, {k:t.facts.language,v:'English · Türkçe · Français'}, {k:t.facts.subtitles,v: tr?'12 dil':'12 languages'}, {k:t.facts.codec,v:'4K HDR10+ · HEVC 10-bit'} ];
+    const subLangs= tr?['Türkçe','English','Français','Deutsch','Español','Italiano']:['English','Türkçe','French','German','Spanish','Italian'];
+    const subExisting=[ {lang:(tr?'Türkçe':'English')+' (Full)', fmt:'SRT', src:X.embedded, on:true, off:false}, {lang:'English (SDH)', fmt:'SRT', src:X.embedded, on:false, off:true}, {lang:'Français', fmt:'ASS', src:'OpenSubtitles', on:false, off:true} ];
+    const subResults=subLangs.map((l,i)=>({ lang:l, meta:'OpenSubtitles · '+(5-i%2)+'.'+(9-i)+'★ · '+(126-i*8)+'k '+(tr?'indirme':'downloads'), fmt: i%2?'ASS':'SRT' }));
+    const verBase={display:'flex',alignItems:'center',gap:'11px',padding:'11px 13px',borderRadius:'10px',cursor:'pointer',border:'1px solid rgba(129,151,164,.14)',background:'rgba(255,255,255,.02)'};
+    const verSrc=[["4K HDR10+ Remux",'2160p · HEVC · 62 GB'],["1080p Blu-ray",'1080p · H.264 · 12 GB'],[(tr?"Yönetmen Kurgusu 4K":"Director's Cut 4K"),'2160p · HEVC · 74 GB']];
+    const versions=verSrc.map((v,i)=>{ const on=s.mediaVersion===i; return { label:v[0], meta:v[1], on, off:!on, onClick:()=>this.setState({mediaVersion:i}), style: on?{...verBase,border:'1px solid var(--accent,#22d3d3)',background:'rgba(34,211,211,.1)'}:verBase }; });
+    const audSrc=[['English','TrueHD Atmos 7.1'],['English','AC3 5.1'],['Türkçe','AAC 2.0'],['Français','AAC 2.0'],[(tr?'Yorum (Yönetmen)':'Commentary'),'AAC 2.0']];
+    const audioTracks=audSrc.map((a,i)=>{ const on=s.mediaAudio===i; return { lang:a[0], codec:a[1], on, off:!on, onClick:()=>this.setState({mediaAudio:i}), dotStyle:{width:'16px',height:'16px',borderRadius:'50%',flex:'none',border: on?'5px solid var(--accent,#22d3d3)':'2px solid rgba(129,151,164,.4)',background: on?'#0f171e':'transparent'} }; });
+    const detail={ ...d, kindTr:t.kind[d.kind], runtime: d.kind==='Series'?(tr?'2 Sezon':'2 Seasons'):(tr?'2 sa 14 dk':'2h 14m'), maturity:'16+', quality:'4K HDR', overview:t.overview, backdrop:this.bigFill(d.hue), episodes, cast, scenes, facts, subExisting, subResults, versions, audioTracks, related: items.filter(x=>x.id!==d.id).slice(0,8) };
+
+    const seBase={padding:'7px 15px',border:'none',borderRadius:'7px',fontFamily:'Figtree',fontSize:'13px',fontWeight:700,cursor:'pointer',background:'transparent',color:'#8197a4'};
+    const seasons=[1,2].map(n=>({ label:t.season+' '+n, style: s.season===n?{...seBase,background:'#fff',color:'#0f171e'}:seBase, onClick:()=>this.setState({season:n}) }));
+
+    const dtBase={display:'flex',alignItems:'center',gap:'7px',padding:'13px 4px',marginRight:'22px',border:'none',background:'none',fontFamily:'Figtree',fontSize:'14.5px',fontWeight:700,cursor:'pointer',color:'#8197a4',borderBottom:'2px solid transparent'};
+    const dtDef=[['episodes',t.detailTabs.episodes],['related',t.detailTabs.related],['details',t.detailTabs.details],['cast',t.detailTabs.cast]];
+    const detailTabs=dtDef.map(x=>({ label:x[1], onClick:()=>this.setState({detailTab:x[0]}), style: s.detailTab===x[0]?{...dtBase,color:'#fff',borderBottom:'2px solid var(--accent,#22d3d3)'}:dtBase }));
+
+    const navBase={padding:'8px 14px',borderRadius:'8px',cursor:'pointer',fontSize:'14.5px',fontWeight:600,whiteSpace:'nowrap',transition:'color .15s'};
+    const navDef=[['home',t.nav.home],['movies',t.nav.movies],['series',t.nav.series],['music',t.nav.music],['live',t.nav.live],['mystuff',t.nav.mystuff]];
+    const navItems=navDef.map(n=>{ const active=(s.screen!=='settings')&&s.nav===n[0]; return { label:n[1], onClick:()=>this.navTo(n[0]), style: active?{...navBase,color:'#fff'}:{...navBase,color:'#8197a4'} }; });
+
+    const libTitle=t.titles[s.nav]||t.titles.library;
+    let libItems=items;
+    if(s.nav==='movies') libItems=items.filter(i=>i.kind==='Movie');
+    else if(s.nav==='series') libItems=items.filter(i=>i.kind==='Series');
+    const fBase={padding:'9px 17px',borderRadius:'8px',border:'1px solid rgba(129,151,164,.22)',fontFamily:'Figtree',fontSize:'13px',fontWeight:600,cursor:'pointer',background:'rgba(255,255,255,.03)',color:'#c3d0d9'};
+    const filters=t.filters.map((l,i)=>({ label:l, style: i===0?{...fBase,background:'var(--accent,#22d3d3)',color:'#08131a',border:'1px solid transparent'}:fBase, onClick:()=>{} }));
+
+    const stBase={display:'flex',alignItems:'center',gap:'8px',padding:'12px 4px',marginRight:'20px',border:'none',background:'none',fontFamily:'Figtree',fontSize:'14px',fontWeight:700,cursor:'pointer',color:'#8197a4',borderBottom:'2px solid transparent'};
+    const setTabsDef=[['dashboard',t.tabs.dashboard,'layout-dashboard'],['libraries',t.tabs.libraries,'folder'],['users',t.tabs.users,'users'],['devices',X.tabDevices,'smartphone'],['livetv',X.tabLiveTv,'tv'],['plugins',t.tabs.plugins,'puzzle'],['tasks',X.tabTasks,'timer'],['activity',X.tabActivity,'scroll-text'],['apikeys',X.tabApiKeys,'key-round'],['playback',t.tabs.playback,'play-circle'],['network',t.tabs.network,'network'],['notifications',X.tabNotifications,'bell'],['metadata',X.tabMetadata,'tags'],['subtitles',X.tabSubtitles,'captions'],['dlna',X.tabDlna,'cast'],['logs',t.tabs.logs,'file-text']];
+    const setTabs=setTabsDef.map(x=>({ label:x[1], icon:x[2], onClick:()=>this.setState({setTab:x[0]}), style: s.setTab===x[0]?{...stBase,color:'#fff',borderBottom:'2px solid var(--accent,#22d3d3)'}:stBase }));
+
+    const iconBase={width:'40px',height:'40px',borderRadius:'10px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'19px'};
+    const statMeta=[ {icon:'server',bg:'rgba(34,211,211,.14)',col:'var(--accent,#22d3d3)',dc:'#5fd08a'}, {icon:'activity',bg:'rgba(34,211,211,.14)',col:'var(--accent,#22d3d3)',dc:'#8197a4'}, {icon:'clapperboard',bg:'rgba(34,211,211,.14)',col:'var(--accent,#22d3d3)',dc:'#5fd08a'}, {icon:'hard-drive',bg:'rgba(34,211,211,.14)',col:'var(--accent,#22d3d3)',dc:'#8197a4'} ];
+    const stats=statMeta.map((m,i)=>({ label:t.statsLabel[i], value:t.statsValue[i], delta:t.statsDelta[i], icon:m.icon, iconStyle:{...iconBase,background:m.bg,color:m.col}, deltaStyle:{fontSize:'12px',fontWeight:700,color:m.dc} }));
+
+    const streamMeta=[ {title:'The Glass Meridian · E4',user:'Elif',device:'Apple TV',modeKey:'direct',time:'0:34 / 0:48',hue:285,pr:0.62}, {title:'Vantablack',user:'Deniz',device:'Chrome · Windows',modeKey:'transcode',time:'1:02 / 2:14',hue:275,pr:0.45}, {title:'Neon Harbor · E7',user:'Kaan',device:'Android · Pixel',modeKey:'play',time:'0:08 / 0:52',hue:320,pr:0.16} ];
+    const streams=streamMeta.map(m=>({ title:m.title, user:m.user, device:m.device, mode:t.modes[m.modeKey], time:m.time, fill:this.cellFill(m.hue), bar:{...barGrad,borderRadius:'4px',width:(m.pr*100)+'%'} }));
+
+    const actIcons=['user-check','download','refresh-cw','alert-triangle','user-plus'];
+    const actTimes=tr?['2 dakika önce','26 dakika önce','1 saat önce','3 saat önce','Dün']:['2 minutes ago','26 minutes ago','1 hour ago','3 hours ago','Yesterday'];
+    const activity=t.activity.map((txt,i)=>({ icon:actIcons[i], text:txt, time:actTimes[i] }));
+
+    const libIconBase={width:'42px',height:'42px',borderRadius:'10px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'19px'};
+    const libMeta=[ {icon:'clapperboard'}, {icon:'tv'}, {icon:'music'}, {icon:'radio'}, {icon:'book-open'}, {icon:'image'} ];
+    const libraries=libMeta.map((m,i)=>({ name:t.libNames[i], count:t.libCounts[i], icon:m.icon, iconStyle:{...libIconBase,background:'rgba(34,211,211,.12)',color:'var(--accent,#22d3d3)'} }));
+
+    const uBoxBase={width:'37px',height:'37px',borderRadius:'9px',flex:'none',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Figtree',fontWeight:700,fontSize:'14px'};
+    const roleBase={fontSize:'11.5px',fontWeight:700,padding:'4px 11px',borderRadius:'20px',width:'fit-content'};
+    const uMeta=[ {name:'Mugur',email:'mugur@jellynext.local',lastKey:'now',plays:'1,240',roleKey:'admin',hue:285}, {name:'Elif',email:'elif@jellynext.local',lastKey:'now',plays:'860',roleKey:'user',hue:255}, {name:'Deniz',email:'deniz@jellynext.local',lastKey:'min',plays:'512',roleKey:'user',hue:320}, {name:'Kaan',email:'kaan@jellynext.local',lastKey:'day',plays:'44',roleKey:'kid',hue:45}, {name:'Selin',email:'selin@jellynext.local',lastKey:'days',plays:'190',roleKey:'user',hue:150} ];
+    const roleStyleFor=k=> k==='admin'?{...roleBase,background:'var(--accent,#22d3d3)',color:'#08131a'} : (k==='kid'?{...roleBase,background:'rgba(95,208,138,.16)',color:'#5fd08a'}:{...roleBase,background:'rgba(129,151,164,.16)',color:'#c3d0d9'});
+    const playsFmt=tr?{'1,240':'1.240'}:{};
+    const users=uMeta.map(u=>({ name:u.name, email:u.email, initial:u.name[0], last:t.lastSeen[u.lastKey], plays:(playsFmt[u.plays]||u.plays)+' '+t.hours, role:t.roles[u.roleKey], boxStyle:{...uBoxBase,...this.avatarFill(u.hue)}, roleStyle:roleStyleFor(u.roleKey) }));
+
+    const togBase={width:'44px',height:'26px',borderRadius:'20px',padding:'3px',display:'flex',cursor:'pointer',transition:'all .15s'};
+    const gsrc=(t.generic[s.setTab]||[]);
+    const genericRows=gsrc.map((g,gi)=>{ const isToggle=typeof g[2]==='boolean'; const key=s.setTab+':'+gi; const on = (key in s.toggles)? s.toggles[key] : g[2]; return { title:g[0], desc:g[1], isToggle, isValue:!isToggle, value:isToggle?'':g[2], onToggle:()=>this.setState(st=>({toggles:{...st.toggles,[key]:!on}})), toggleStyle: on===true?{...togBase,background:'var(--accent,#22d3d3)',justifyContent:'flex-end'}:{...togBase,background:'rgba(129,151,164,.28)',justifyContent:'flex-start'} }; });
+
+    // ---- SEARCH ----
+    const q=(s.q||'').trim().toLowerCase(); const hasQuery=q.length>0; const noQuery=!hasQuery;
+    const stDef=[['all',X.typeAll],['movies',X.typeMovies],['shows',X.typeShows],['people',X.typePeople],['music',X.typeMusic]];
+    const searchTypes=stDef.map(x=>({ label:x[1], onClick:()=>this.setState({searchType:x[0]}), style: s.searchType===x[0]?{...fBase,background:'var(--accent,#22d3d3)',color:'#08131a',border:'1px solid transparent'}:fBase }));
+    const chip={padding:'9px 16px',borderRadius:'20px',border:'1px solid rgba(129,151,164,.22)',background:'rgba(255,255,255,.03)',color:'#c3d0d9',fontSize:'13px',fontWeight:600,cursor:'pointer'};
+    const genreChips=[...new Set(Object.values(t.genres))].map(g=>({ label:g, style:chip }));
+    const topSearches=items.slice(0,6);
+    let sPool=items; if(s.searchType==='movies') sPool=items.filter(i=>i.kind==='Movie'); else if(s.searchType==='shows') sPool=items.filter(i=>i.kind==='Series');
+    const searchResults= hasQuery? sPool.filter(i=>i.title.toLowerCase().includes(q)) : [];
+    const pplBox=(h)=>({width:'90px',height:'90px',borderRadius:'50%',flex:'none',margin:'0 auto',...this.faceFill(h)});
+    const peopleAll=castRaw.slice(0,6).map((c,i)=>({ name:c[0], boxStyle:pplBox(c[2]), onOpen:()=>this.openPerson(mkPerson(c,i)) }));
+    const peopleResults= hasQuery? peopleAll.filter(p=>p.name.toLowerCase().includes(q)) : peopleAll;
+    const showPeople= hasQuery && (s.searchType==='all'||s.searchType==='people') && peopleResults.length>0;
+    const hasResults= s.searchType!=='people' && searchResults.length>0;
+    const noResults= hasQuery && !hasResults && !showPeople;
+
+    // ---- LIVE TV ----
+    const chLogo=(h)=>({width:'40px',height:'40px',flex:'none',borderRadius:'9px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',fontWeight:800,color:'#08131a',background:`linear-gradient(150deg, oklch(0.72 0.13 ${h}), oklch(0.56 0.14 ${(h+40)%360}))`});
+    const chLogoLg=(h)=>({...chLogo(h),width:'48px',height:'48px',fontSize:'13px'});
+    const progNames= tr?['Haber Bülteni','Ana Film','Belgesel Kuşağı','Gece Programı','Dizi Maratonu','Söyleşi','Klasik Sinema','Canlı Yayın']:['Evening News','Feature Film','Documentary','Late Show','Series Marathon','Talk Show','Classic Cinema','Live Event'];
+    const guideTimes=['20:00','20:30','21:00','21:30','22:00','22:30'];
+    const chDef=[['C1','Cinema One',285],['NX','JN News',200],['SP','Sportline',150],['DOC','Terra Docs',100],['KID','Junior',45],['MZ','Pulse',330],['MV','Blockbuster',20],['SR','Series 24/7',255]];
+    const channels=chDef.map((c,ci)=>{ const programs=[0,1,2].map(k=>{ const now=k===0; return { title:progNames[(ci+k)%progNames.length], time:['20:00 – 21:00','21:00 – 22:00','22:00 – 23:30'][k], onPlay:()=>this.play(), style:{ flex:[2,2,3][k], minWidth:0, borderRadius:'7px', padding:'8px 11px', cursor:'pointer', overflow:'hidden', background: now?'var(--accent,#22d3d3)':'rgba(129,151,164,.12)', color: now?'#08131a':'#c3d0d9' } }; }); return { code:c[0], name:c[1], num:'CH '+(ci+1), nowTitle:progNames[ci%progNames.length], logoStyle:chLogo(c[2]), logoStyleLg:chLogoLg(c[2]), programs, onPlay:()=>this.play() }; });
+    const ltDef=[['guide',X.guide],['channels',X.channels],['recordings',X.recordings]];
+    const ltBase={padding:'7px 15px',border:'none',borderRadius:'7px',fontFamily:'Figtree',fontSize:'13px',fontWeight:700,cursor:'pointer',background:'transparent',color:'#8197a4'};
+    const liveTabs=ltDef.map(x=>({ label:x[1], onClick:()=>this.setState({liveTab:x[0]}), style: s.liveTab===x[0]?{...ltBase,background:'#fff',color:'#0f171e'}:ltBase }));
+    const recordings=[[0,'Cinema One'],[3,'Series 24/7'],[10,'Blockbuster'],[15,'Terra Docs']].map(([id,ch],i)=>({ title:items[id].title, meta: ch+' · '+(tr?'Dün':'Yesterday')+' · '+(45+i*6)+(tr?' dk':' min'), fill:this.cellFill(items[id].hue) }));
+
+    // ---- MUSIC ----
+    const trkNames=['Overture','Afterglow','Static Heart','Paper Moons','Long Division','Ghost Notes','Undertow','Lantern','Coastline','Closing Time'];
+    const npBar=(p)=>({position:'absolute',left:0,top:0,bottom:0,width:(p*100)+'%',borderRadius:'4px',background:'var(--accent,#22d3d3)'});
+    const artDef=[['Neon Choir',200],['Vela',285],['The Kestrels',45],['Ana Bloom',330],['Midnight Foundry',150],['Sable',255],['Riven',20],['Aurora Park',100]];
+    const artists=artDef.map(a=>({ name:a[0], boxStyle:{width:'120px',height:'120px',borderRadius:'50%',flex:'none',margin:'0 auto',...this.faceFill(a[1])} }));
+    const albBase=[['Afterglow','Vela',2024,200],['Paper Moons','The Kestrels',2023,45],['Ironline','Sable',2025,255],['Small Hours','Ana Bloom',2022,330],['Voltage','Midnight Foundry',2024,150],['Coastline','Aurora Park',2023,100],['Ghost Notes','Riven',2025,20],['Halcyon','Neon Choir',2021,285],['Ember Roads','Vela',2022,295],['Tidal','Sable',2023,262],['North','The Kestrels',2024,52],['Lantern','Aurora Park',2025,112]];
+    const mkAlbum=(a)=>{ const o={ title:a[0], artist:a[1], year:a[2], hue:a[3], trackCount:10, fill:this.cellFill(a[3]) }; o.onOpen=()=>this.openAlbum(o); o.onPlay=(e)=>{ if(e&&e.stopPropagation)e.stopPropagation(); this.playTrack({title:trkNames[1],artist:a[1],fill:this.cellFill(a[3]),bar:npBar(0.3)}); }; return o; };
+    const albums=albBase.map(mkAlbum);
+    const recentAlbums=[albums[2],albums[0],albums[6],albums[4],albums[9],albums[1]];
+    const album=s.album||albums[0];
+    const tracks=trkNames.map((tn,i)=>({ n:i+1, title:tn, dur:['3:12','4:02','2:58','3:41','5:10','3:26','4:18','2:44','3:59','4:36'][i], plays:(1200-i*90).toLocaleString(), onPlay:()=>this.playTrack({title:tn,artist:album.artist,fill:album.fill,bar:npBar(0.3)}) }));
+    const np=s.np; const npActive=!!np && s.screen!=='player'; const npIcon=s.npPlaying?'pause':'play';
+    const pmOpen=!!s.playerMenu, pmSubs=s.playerMenu==='subs', pmQuality=s.playerMenu==='quality';
+    const pmSubList=[{label:tr?'Kapalı':'Off',on:false,onClick:()=>this.setState({playerMenu:null})}, {label:(tr?'Türkçe':'English')+' (Full)',on:true,onClick:()=>this.setState({playerMenu:null})}, {label:'English (SDH)',on:false,onClick:()=>this.setState({playerMenu:null})}, {label:'Français',on:false,onClick:()=>this.setState({playerMenu:null})}];
+    const pmAudList=[['English','TrueHD Atmos 7.1',true],['English','AC3 5.1',false],['Türkçe','AAC 2.0',false],[(tr?'Yorum':'Commentary'),'AAC 2.0',false]].map(a=>({lang:a[0],codec:a[1],on:a[2],onClick:()=>this.setState({playerMenu:null})}));
+    const qualityOpts=['Auto (4K HDR)','4K HDR · 62 Mbps','1080p · 12 Mbps','720p · 4 Mbps','480p · 1.5 Mbps'].map((l,i)=>({label:l,on:i===0,onClick:()=>this.setState({playerMenu:null})}));
+    const speedOpts=['0.5×','0.75×',(tr?'Normal':'Normal'),'1.25×','1.5×','2×'].map(l=>({label:l,on:l==='Normal',onClick:()=>this.setState({playerMenu:null})}));
+
+    // ---- PERSON ----
+    const person=s.person||mkPerson(castRaw[0],0);
+
+    // ---- MY STUFF ----
+    const mtBase={display:'flex',alignItems:'center',gap:'7px',padding:'12px 4px',marginRight:'22px',border:'none',background:'none',fontFamily:'Figtree',fontSize:'14px',fontWeight:700,cursor:'pointer',color:'#8197a4',borderBottom:'2px solid transparent'};
+    const myTabDef=[['watchlist',X.watchlist],['favorites',X.favorites],['downloads',X.downloads],['collections',X.collections],['playlists',X.playlists]];
+    const myTabs=myTabDef.map(x=>({ label:x[1], onClick:()=>this.setState({myTab:x[0]}), style: s.myTab===x[0]?{...mtBase,color:'#fff',borderBottom:'2px solid var(--accent,#22d3d3)'}:mtBase }));
+    const myGrid= s.myTab==='watchlist'||s.myTab==='favorites';
+    const myDownloads= s.myTab==='downloads';
+    const myCards= s.myTab==='collections'||s.myTab==='playlists';
+    const myItems= s.myTab==='favorites'? items.filter((x,i)=>i%3===0) : items.filter((x,i)=>i%2===1);
+    const downloads=[[1,0.4],[10,1],[4,1],[15,0.72]].map(([id,p])=>({ title:items[id].title, meta:(tr?'Film · 2,4 GB · 1080p':'Movie · 2.4 GB · 1080p'), fill:this.cellFill(items[id].hue), bar:{...barGrad,borderRadius:'4px',width:(p*100)+'%'}, status: p>=1?(tr?'Hazır':'Ready'):Math.round(p*100)+'%' }));
+    const collSrc= s.myTab==='playlists'? [['My Mix',200,'42 · '+(tr?'parça':'tracks'),'music'],['Focus',150,'28 · '+(tr?'parça':'tracks'),'headphones'],['Road Trip',45,'55 · '+(tr?'parça':'tracks'),'route'],['Chill Evening',285,'33 · '+(tr?'parça':'tracks'),'moon']] : [['Sci-Fi Essentials',285,'12 '+(tr?'başlık':'titles'),'sparkles'],['Award Winners',45,'8 '+(tr?'başlık':'titles'),'award'],['Weekend Binge',255,'20 '+(tr?'başlık':'titles'),'sofa'],['Director: V. Lindqvist',150,'5 '+(tr?'başlık':'titles'),'clapperboard'],['Cozy Nights',330,'14 '+(tr?'başlık':'titles'),'moon'],['Watch Party Picks',100,'9 '+(tr?'başlık':'titles'),'users']];
+    const collCards=collSrc.map(c=>{ const o={ name:c[0], count:c[2], icon:c[3], fill:this.bigFill(c[1]) }; o.onOpen=()=>this.openCollection({name:c[0],hue:c[1]}); return o; });
+    const coll=s.coll||{name:'Collection',hue:285};
+    const collTitle=coll.name; const collItems=items.filter((x,i)=>(i+coll.hue)%2===0).slice(0,10); const collCount=collItems.length;
+
+    // ---- PREFERENCES ----
+    const prefRow=(key,title,desc,val)=>{ const isToggle=typeof val==='boolean'; const on=(key in s.toggles)?s.toggles[key]:val; return { title, desc, isToggle, isValue:!isToggle, value:isToggle?'':val, onToggle:()=>this.setState(st=>({toggles:{...st.toggles,[key]:!on}})), toggleStyle: on===true?{...togBase,background:'var(--accent,#22d3d3)',justifyContent:'flex-end'}:{...togBase,background:'rgba(129,151,164,.28)',justifyContent:'flex-start'} }; };
+    const PF= tr? {
+      pb:'Oynatma', autoNext:['Sıradakini otomatik oynat','Bölüm bitince devam et',true],skip:['Jenerikleri otomatik atla','Intro ve özetleri geç',true],quality:['Varsayılan kalite','Bağlantıya göre üst sınır','4K'],resume:['Konumu hatırla','Kaldığın yerden devam et',true],
+      sb:'Altyazı', subDef:['Altyazıları varsayılan göster','Her zaman altyazı aç',false],subLang:['Altyazı dili','Tercih edilen dil','Türkçe'],subSize:['Altyazı boyutu','Metin boyutu','Orta'],
+      au:'Ses', auLang:['Ses dili','Tercih edilen ses','Orijinal'],dialog:['Diyalog vurgusu','Konuşmaları öne çıkar',false],
+      pc:'Ebeveyn', rating:['İçerik yaş sınırı','İzin verilen üst sınır','16+'],pin:['Yetişkin içerik için PIN','Erişimde PIN sor',true],
+      gn:'Genel', gLang:['Uygulama dili','Arayüz dili','Türkçe'],motion:['Hareketi azalt','Animasyonları kıs',false],trailers:['Fragmanları otomatik oynat','Gezinirken önizleme',true]
+    } : {
+      pb:'Playback', autoNext:['Autoplay next episode','Continue when an episode ends',true],skip:['Auto-skip intros','Skip intros and recaps',true],quality:['Default quality','Upper limit by connection','4K'],resume:['Remember position','Resume where you left off',true],
+      sb:'Subtitles', subDef:['Show subtitles by default','Always turn subtitles on',false],subLang:['Subtitle language','Preferred language','English'],subSize:['Subtitle size','Text size','Medium'],
+      au:'Audio', auLang:['Audio language','Preferred audio','Original'],dialog:['Dialogue boost','Emphasize speech',false],
+      pc:'Parental', rating:['Content rating limit','Maximum allowed','16+'],pin:['PIN for adult content','Require PIN on access',true],
+      gn:'General', gLang:['App language','Interface language','English'],motion:['Reduce motion','Dial back animations',false],trailers:['Autoplay trailers','Preview while browsing',true]
+    };
+    const prefsSections=[
+      {title:PF.pb, rows:[prefRow('pf:autoNext',...PF.autoNext),prefRow('pf:skip',...PF.skip),prefRow('pf:quality',...PF.quality),prefRow('pf:resume',...PF.resume)]},
+      {title:PF.sb, rows:[prefRow('pf:subDef',...PF.subDef),prefRow('pf:subLang',...PF.subLang),prefRow('pf:subSize',...PF.subSize)]},
+      {title:PF.au, rows:[prefRow('pf:auLang',...PF.auLang),prefRow('pf:dialog',...PF.dialog)]},
+      {title:PF.pc, rows:[prefRow('pf:rating',...PF.rating),prefRow('pf:pin',...PF.pin)]},
+      {title:PF.gn, rows:[prefRow('pf:gLang',...PF.gLang),prefRow('pf:motion',...PF.motion),prefRow('pf:trailers',...PF.trailers)]},
+    ];
+
+    // ---- ADMIN EXTRA ----
+    const devDef=[['Living Room TV','Mugur','JellyNext Android TV','Active now','192.168.1.24','tv'],['iPhone 15','Elif','JellyNext iOS','2 min ago','192.168.1.31','smartphone'],['Chrome','Deniz','Web','1 h ago','86.120.4.9','monitor'],['Office PC','Mugur','JellyNext Desktop','Yesterday','192.168.1.10','monitor'],['Pixel 8','Kaan','JellyNext Android','3 d ago','192.168.1.52','smartphone']];
+    const devLast= tr?{'Active now':'Şu an aktif','2 min ago':'2 dk önce','1 h ago':'1 sa önce','Yesterday':'Dün','3 d ago':'3 gün önce'}:{};
+    const devices=devDef.map(d=>({ name:d[0], user:d[1], app:d[2], last:devLast[d[3]]||d[3], ip:d[4], icon:d[5] }));
+    const taskDef=[['Scan Media Library','Today 04:00',0],['Refresh Guide Data','Running now',0.4],['Clean Transcode Cache','Yesterday',0],['Generate Trickplay Images','Today 02:00',0],['Optimize Database','3 days ago',0],['Check for Updates','Today 05:00',0]];
+    const taskNamesTr={'Scan Media Library':'Medya Kütüphanesini Tara','Refresh Guide Data':'Rehber Verisini Yenile','Clean Transcode Cache':'Transkod Önbelleğini Temizle','Generate Trickplay Images':'Trickplay Görselleri Oluştur','Optimize Database':'Veritabanını Optimize Et','Check for Updates':'Güncellemeleri Kontrol Et'};
+    const tasks=taskDef.map(tk=>{ const running=tk[2]>0; return { name: tr?taskNamesTr[tk[0]]:tk[0], last:(tr?'Son çalışma: ':'Last run: ')+tk[1], isRunning:running, bar:{...barGrad,borderRadius:'4px',width:(tk[2]*100)+'%'}, statusLabel: running?(tr?'Çalışıyor':'Running'):(tr?'Boşta':'Idle'), statusStyle:{fontSize:'11.5px',fontWeight:700,padding:'4px 10px',borderRadius:'20px',flex:'none', ...(running?{background:'rgba(34,211,211,.16)',color:'var(--accent,#22d3d3)'}:{background:'rgba(129,151,164,.14)',color:'#8197a4'})} }; });
+    const alDef=[['user-check','Elif started playing The Glass Meridian','Elif','20:14','ok'],['alert-triangle','Transcode throttled — bandwidth cap reached','System','19:58','warn'],['download','Cobalt Dreams added to library','System','19:30','ok'],['log-in','Deniz signed in from Chrome','Deniz','18:45','ok'],['x-circle','Failed login attempt for "admin"','—','17:20','err'],['refresh-cw','Task "Scan Media Library" completed','System','16:00','ok']];
+    const alDefTr=[['user-check','Elif "The Glass Meridian" oynatmaya başladı','Elif','20:14','ok'],['alert-triangle','Transkod kısıtlandı — bant genişliği sınırı','Sistem','19:58','warn'],['download','"Cobalt Dreams" kütüphaneye eklendi','Sistem','19:30','ok'],['log-in','Deniz Chrome üzerinden giriş yaptı','Deniz','18:45','ok'],['x-circle','"admin" için başarısız giriş denemesi','—','17:20','err'],['refresh-cw','"Kütüphane Tara" görevi tamamlandı','Sistem','16:00','ok']];
+    const alColor={ok:{background:'rgba(95,208,138,.14)',color:'#5fd08a'},warn:{background:'rgba(255,183,32,.14)',color:'#ffb020'},err:{background:'rgba(255,77,94,.14)',color:'#ff8a95'}};
+    const activityLog=(tr?alDefTr:alDef).map(a=>({ icon:a[0], text:a[1], user:a[2], time:a[3], iconStyle:{width:'34px',height:'34px',flex:'none',borderRadius:'9px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'16px',...alColor[a[4]]} }));
+    const apiKeys=[['JellyNext Web','a1b2••••••7f3d','2025-11-02'],['Home Assistant','9c4e••••••1a20','2025-09-14'],['Kodi Sync','7d5f••••••88b1','2025-06-30']].map(k=>({ app:k[0], key:k[1], created:k[2] }));
+    const piSrc= tr?[['Intro Skipper','1.10.2','Jenerikleri algıla ve atla',true],['Trakt','4.2.1','Trakt\'a kaydet (scrobble)',true],['TMDb Box Sets','2.0.0','Otomatik koleksiyonlar',true],['Playback Reporting','14.0','Kullanım istatistikleri',false]]:[['Intro Skipper','1.10.2','Detect and skip intros',true],['Trakt','4.2.1','Scrobble to Trakt',true],['TMDb Box Sets','2.0.0','Auto collections',true],['Playback Reporting','14.0','Usage statistics',false]];
+    const pluginsInstalled=piSrc.map((p,i)=>{ const key='plg:'+i; const on=(key in s.toggles)?s.toggles[key]:p[3]; return { name:p[0], version:p[1], desc:p[2], onToggle:()=>this.setState(st=>({toggles:{...st.toggles,[key]:!on}})), toggleStyle: on===true?{...togBase,background:'var(--accent,#22d3d3)',justifyContent:'flex-end'}:{...togBase,background:'rgba(129,151,164,.28)',justifyContent:'flex-start'} }; });
+    const pcSrc= tr?[['Subtitle Downloader','OpenSubtitles\'tan altyazı getir','Üstveri',false],['LDAP Auth','Kurumsal kimlik doğrulama','Kimlik',false],['Webhooks','Olayları dış servislere gönder','Bildirim',true],['Reports','Dışa aktarılabilir raporlar','Genel',false],['Session Cleaner','Boşta oturumları kapat','Genel',false],['Anime Metadata','AniList / AniDB sağlayıcıları','Üstveri',false]]:[['Subtitle Downloader','Fetch subtitles from OpenSubtitles','Metadata',false],['LDAP Auth','Enterprise authentication','Auth',false],['Webhooks','Send events to external services','Notifications',true],['Reports','Exportable library reports','General',false],['Session Cleaner','Auto-close idle sessions','General',false],['Anime Metadata','AniList / AniDB providers','Metadata',false]];
+    const instBtn={padding:'9px 16px',border:'none',borderRadius:'8px',background:'var(--accent,#22d3d3)',color:'#08131a',fontFamily:'Figtree',fontSize:'12.5px',fontWeight:800,cursor:'pointer',flex:'none'};
+    const instedBtn={padding:'9px 16px',border:'1px solid rgba(129,151,164,.3)',borderRadius:'8px',background:'transparent',color:'#8197a4',fontFamily:'Figtree',fontSize:'12.5px',fontWeight:700,cursor:'default',flex:'none'};
+    const pluginsCatalog=pcSrc.map(p=>({ name:p[0], desc:p[1], cat:p[2], btnLabel:p[3]?X.installed:X.install, btnStyle:p[3]?instedBtn:instBtn }));
+    const tuners=[['HDHomeRun Prime',(tr?'3 alıcı · boşta':'3 tuners · idle')],['IPTV M3U',(tr?'142 kanal':'142 channels')]].map(x=>({ name:x[0], info:x[1], status:tr?'Çevrimiçi':'Online' }));
+    const guideProviders=[['XMLTV','en.xmltv.local',(tr?'7 günlük rehber':'7-day guide')],['Schedules Direct','account #40213',(tr?'14 günlük rehber':'14-day guide')]].map(x=>({ name:x[0], info:x[1], range:x[2] }));
+
+    const pr=s.progress;
+    const fmt=(sec)=>{ sec=Math.max(0,Math.round(sec)); const h=Math.floor(sec/3600), m=Math.floor((sec%3600)/60), ss=sec%60; return (h?h+':':'')+String(m).padStart(h?2:1,'0')+':'+String(ss).padStart(2,'0'); };
+    const total=8046; const vol=s.muted?0:s.volume;
+
+    const langBase={border:'none',padding:'6px 11px',borderRadius:'6px',fontFamily:'Figtree',fontSize:'12px',fontWeight:700,cursor:'pointer',background:'transparent',color:'#8197a4'};
+    const langActive={...langBase,background:'#fff',color:'#0f171e'};
+
+    return {
+      isLogin:s.screen==='login', isApp:s.screen!=='login'&&s.screen!=='player', isPlayer:s.screen==='player',
+      isHome:s.screen==='home', isLibrary:s.screen==='library', isDetail:s.screen==='detail', isSettings:s.screen==='settings',
+      isSearch:s.screen==='search', isLiveTV:s.screen==='livetv', isMusic:s.screen==='music', isAlbum:s.screen==='album', isPerson:s.screen==='person', isMyStuff:s.screen==='mystuff', isCollection:s.screen==='collection', isPrefs:s.screen==='prefs',
+      isDash:s.setTab==='dashboard', isUsers:s.setTab==='users', isLibrariesTab:s.setTab==='libraries', isDevices:s.setTab==='devices', isLiveAdmin:s.setTab==='livetv', isPlugins:s.setTab==='plugins', isTasks:s.setTab==='tasks', isActivity:s.setTab==='activity', isApiKeys:s.setTab==='apikeys', isGeneric:['playback','network','notifications','metadata','subtitles','dlna','logs'].includes(s.setTab),
+      tabEpisodes:s.detailTab==='episodes', tabRelated:s.detailTab==='related', tabDetails:s.detailTab==='details', tabCast:s.detailTab==='cast',
+      showRatings,
+      tWhoWatching:t.who, tOtherAccount:t.other, tConnected:t.connected, tSearch:t.search, tIncluded:t.included, tIncludedShort:t.includedShort,
+      tSeeAll:t.seeAll, tPlay:t.play, tDetails:t.details, tWatchlist:t.watchlist, tItems:t.items, tSort:t.sort, tFilter:t.filter,
+      tCast:t.cast, tScenes:t.scenes, tScenesDesc:t.scenesDesc, tSubtitles:t.subtitles, tSceneInfo:t.sceneInfo,
+      tAdminKicker:t.adminKicker, tServerPanel:t.serverPanel, tActiveStreams:t.activeStreams, tSessions:t.sessions, tRecentActivity:t.recentActivity,
+      tLibrariesTitle:t.librariesTitle, tAddLibrary:t.addLibrary, tUsersTitle:t.usersTitle, tAddUser:t.addUser,
+      uc0:t.userCols[0], uc1:t.userCols[1], uc2:t.userCols[2], uc3:t.userCols[3],
+      profiles:[['Mugur',285],['Elif',255],['Deniz',320],['Kaan',45]].map(p=>({ name:p[0], initial:p[0][0], boxStyle:{width:'100px',height:'100px',borderRadius:'14px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'32px',fontWeight:700,color:'#fff',...this.avatarFill(p[1])}, onClick:()=>this.enter() })),
+      navItems, rows, hero, heroDots,
+      libTitle, libItems, libCount:libItems.length, filters,
+      detail, seasons, detailTabs,
+      setTabs, stats, streams, activity, libraries, users, genericRows,
+      openSearch:()=>this.openSearch(), openPrefs:()=>this.openPrefs(), onSearchInput:(e)=>this.setState({q:e.target.value}), clearSearch:()=>this.setState({q:''}), noop:()=>{}, npToggle:()=>this.setState({npPlaying:!s.npPlaying}),
+      q:s.q, hasQuery, noQuery, searchTypes, genreChips, topSearches, searchResults, peopleResults, showPeople, hasResults, noResults, resultsTitle:X.resultsFor,
+      xSearchPh:X.searchPh, xBrowseGenres:X.browseGenres, xTopSearches:X.topSearches, xNoResults:X.noResults, xPeople:X.people,
+      xLiveTitle:X.liveTitle, liveTabs, channels, guideTimes, recordings, liveGuide:s.liveTab==='guide', liveChannels:s.liveTab==='channels', liveRec:s.liveTab==='recordings', xOnNow:X.onNow,
+      xMusicTitle:X.musicTitle, xRecentlyPlayed:X.recentlyPlayed, xArtists:X.artists, xAlbums:X.albums, xArtistLabel:X.artistLabel, xAlbumLabel:X.albumLabel, xTracks:X.tracks, xPlayAll:X.playAll, xShuffle:X.shuffle, recentAlbums, artists, albums, album, tracks,
+      xBorn:X.born, xFilmography:X.filmography, person,
+      xSubAvailable:X.subAvailable, xSubSearch:X.subSearch, xDownload:X.download, xActive:X.active, xEnable:X.enable, xSubProviders:X.subProviders, xVersions:X.versions, xAudioTracks:X.audioTracks, xDefault:X.default_,
+      xMyStuffTitle:X.myStuffTitle, myTabs, myGrid, myDownloads, myCards, myItems, downloads, collCards,
+      collTitle, collItems, collCount,
+      xPrefsTitle:X.prefsTitle, xSignOut:X.signOut, prefsSections,
+      np, npActive, npIcon,
+      pmOpen, pmSubs, pmQuality, pmSubList, pmAudList, qualityOpts, speedOpts,
+      mSubs:()=>this.setState({playerMenu:s.playerMenu==='subs'?null:'subs'}), mQuality:()=>this.setState({playerMenu:s.playerMenu==='quality'?null:'quality'}), closeMenu:()=>this.setState({playerMenu:null}),
+      xOff: tr?'Kapalı':'Off', xQuality: tr?'Kalite':'Quality', xSpeed: tr?'Oynatma hızı':'Playback speed', xSubsLabel: tr?'Altyazı':'Subtitles', xAudioLabel: tr?'Ses':'Audio',
+      devices, tasks, activityLog, apiKeys, pluginsInstalled, pluginsCatalog, tuners, guideProviders,
+      xScan:X.scan, xTuners:X.tuners, xAddTuner:X.addTuner, xGuideProviders:X.guideProviders, xInstalled:X.installed, xCatalog:X.catalog, xRunNow:X.runNow, xApiKeys:X.apiKeys, xNewKey:X.newKey, xRevoke:X.revoke,
+      xColDevice:X.colDevice, xColUser:X.colUser, xColApp:X.colApp, xColLast:X.colLast, xColKey:X.colKey, xColCreated:X.colCreated,
+      enter:()=>this.enter(), back:()=>this.goBack(), play:()=>this.play(), goSettings:()=>{ this.setState({screen:'settings'}); this.resetScroll(); },
+      setEn:()=>this.setState({lang:'en'}), setTr:()=>this.setState({lang:'tr'}),
+      enBtn: s.lang==='en'?langActive:langBase, trBtn: s.lang==='tr'?langActive:langBase,
+      togglePlay:()=>this.setState({playing:!s.playing}), toggleMute:()=>this.setState({muted:!s.muted}),
+      seekFwd:()=>this.setState({progress:Math.min(1,s.progress+0.03)}), seekBack:()=>this.setState({progress:Math.max(0,s.progress-0.03)}),
+      seek:(e)=>{ const r=e.currentTarget.getBoundingClientRect(); this.setState({progress:Math.min(1,Math.max(0,(e.clientX-r.left)/r.width))}); },
+      playIcon: s.playing?'pause':'play', volIcon: s.muted||s.volume===0?'volume-x':(s.volume<0.5?'volume-1':'volume-2'),
+      playerSub: detail.kind==='Series'?(t.season+' '+s.season+' · '+(tr?'Bölüm 4 · Awakening':'Episode 4 · Awakening')):'4K HDR · 5.1',
+      curTime:fmt(total*pr), totalTime:fmt(total),
+      progressStyle:{position:'absolute',left:0,top:0,bottom:0,borderRadius:'6px',background:'var(--accent,#22d3d3)',width:(pr*100)+'%'},
+      bufferedStyle:{position:'absolute',left:0,top:0,bottom:0,borderRadius:'6px',background:'rgba(255,255,255,.3)',width:Math.min(100,pr*100+18)+'%'},
+      thumbStyle:{position:'absolute',top:'50%',transform:'translate(-50%,-50%)',width:'15px',height:'15px',borderRadius:'50%',background:'var(--accent,#22d3d3)',boxShadow:'0 2px 8px rgba(0,0,0,.5)',left:(pr*100)+'%'},
+      volStyle:{position:'absolute',left:0,top:0,bottom:0,borderRadius:'5px',background:'#fff',width:(vol*100)+'%'},
+    };
+  }
+}
+</script>
+</body>
+</html>
