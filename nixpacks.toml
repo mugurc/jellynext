@@ -1,0 +1,12 @@
+# Deploy config for Nixpacks (Coolify/Railway).
+# Uses npm; falls back to `npm install` if the committed lockfile is out of
+# sync so the build host can reconcile it (and fetch platform-native deps).
+
+[phases.install]
+cmds = ["npm ci --no-audit --no-fund || npm install --no-audit --no-fund"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "npm run start"
