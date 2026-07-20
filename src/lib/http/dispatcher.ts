@@ -1,6 +1,6 @@
 import "server-only";
 
-import { Agent } from "undici";
+import { Agent, fetch as undiciFetch } from "undici";
 
 /**
  * Dedicated connection pool for outbound Jellyfin requests.
@@ -27,8 +27,6 @@ export const jellyfinDispatcher = new Agent({
   connect: { timeout: 15_000 },
 });
 
-type DispatchableInit = RequestInit & { dispatcher?: Agent };
-
 /**
  * A desktop-browser User-Agent. Jellyfin often sits behind Cloudflare, whose
  * bot protection can 403 (error 1010) requests from a bare server runtime like
@@ -38,17 +36,27 @@ type DispatchableInit = RequestInit & { dispatcher?: Agent };
 const BROWSER_UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
-/** `fetch` routed through {@link jellyfinDispatcher} (Node reads `dispatcher`). */
+/**
+ * Fetch through {@link jellyfinDispatcher}.
+ *
+ * We deliberately use undici's OWN `fetch`, not the Node global `fetch`. The
+ * global fetch is backed by whatever undici Node bundles internally, and
+ * passing an `Agent` from the standalone `undici` package to it throws
+ * `invalid onRequestStart method` (UND_ERR_INVALID_ARG) whenever the two undici
+ * versions differ (e.g. Node 22's bundled undici vs our undici v8). Using
+ * `undici.fetch` guarantees the dispatcher and fetch come from the same undici,
+ * so it works on every Node version.
+ */
 export function jellyfinFetch(
   input: string | URL,
-  init?: RequestInit,
+  init: RequestInit = {},
 ): Promise<Response> {
-  const headers = new Headers(init?.headers);
+  const headers = new Headers(init.headers);
   if (!headers.has("user-agent")) headers.set("user-agent", BROWSER_UA);
-  const withDispatcher: DispatchableInit = {
+  const undiciInit = {
     ...init,
-    headers,
+    headers: Object.fromEntries(headers),
     dispatcher: jellyfinDispatcher,
-  };
-  return fetch(input, withDispatcher);
+  } as unknown as Parameters<typeof undiciFetch>[1];
+  return undiciFetch(input, undiciInit) as unknown as Promise<Response>;
 }
