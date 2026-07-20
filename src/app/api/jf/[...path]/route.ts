@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { authHeader } from "@/lib/jellyfin/rest";
 import { getSession } from "@/lib/jellyfin/session";
+import { jellyfinFetch } from "@/lib/http/dispatcher";
 
 export const dynamic = "force-dynamic";
 
@@ -48,14 +49,20 @@ async function handle(
 
   let upstream: Response;
   try {
-    upstream = await fetch(target, {
+    upstream = await jellyfinFetch(target, {
       method,
       headers,
       body: hasBody ? await req.arrayBuffer() : undefined,
       redirect: "manual",
       cache: "no-store",
+      // Tie the upstream request to the client's lifetime: when the browser
+      // aborts (seek, navigation, HLS segment cancel), the upstream fetch is
+      // aborted too, freeing the socket. Without this, cancelled media streams
+      // leak connections until undici's pool is exhausted and every request hangs.
+      signal: req.signal,
     });
   } catch {
+    // An aborted client request lands here too; nothing to return to a gone client.
     return NextResponse.json(
       { error: "upstream-unreachable" },
       { status: 502 },

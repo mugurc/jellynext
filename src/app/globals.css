@@ -116,7 +116,19 @@ input::placeholder {
   border-radius: 4px;
 }
 
-/* Entry animations (from prototype) */
+/*
+  Motion system — minimal, fade-first, no large movements.
+  Shared duration/easing tokens keep every animation consistent.
+*/
+:root {
+  --dur-fast: 130ms;
+  --dur: 200ms;
+  --dur-slow: 300ms;
+  /* Gentle deceleration curve for the tiny movements we do use. */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* Entry animations */
 @keyframes jnFade {
   from {
     opacity: 0;
@@ -125,31 +137,119 @@ input::placeholder {
     opacity: 1;
   }
 }
-@keyframes jnUp {
+@keyframes jnRise {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
     transform: none;
   }
 }
-.animate-jn-fade {
-  animation: jnFade 0.3s ease both;
+@keyframes jnPop {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
+@keyframes jnBreathe {
+  0%,
+  100% {
+    opacity: 0.32;
+    transform: scale(0.975);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.animate-jn-fade {
+  animation: jnFade var(--dur) var(--ease-out) both;
+}
+/* Small fade + 6px lift for content blocks (kept subtle on purpose). */
+.animate-jn-rise {
+  animation: jnRise var(--dur-slow) var(--ease-out) both;
+}
+/* Fade + near-imperceptible scale for menus/popovers. */
+.animate-jn-pop {
+  animation: jnPop var(--dur-fast) var(--ease-out) both;
+}
+/* Back-compat alias for the old util name. */
 .animate-jn-up {
-  animation: jnUp 0.5s ease both;
+  animation: jnRise var(--dur-slow) var(--ease-out) both;
+}
+.animate-jn-breathe {
+  animation: jnBreathe 2s ease-in-out infinite;
 }
 
+/* Billboard indicator: the active dot fills left→right over its dwell time.
+   Duration is set inline from the JS ROTATE_MS so the two stay in sync. */
+@keyframes jnBbFill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}
+.jn-bb-progress {
+  animation: jnBbFill 7s linear both;
+}
+
+/* Staggered reveal for row/grid children (opacity only — no movement).
+   Apply .jn-stagger on a container; children fade in with a tiny cascade. */
+.jn-stagger > * {
+  animation: jnFade var(--dur) var(--ease-out) both;
+}
+.jn-stagger > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.jn-stagger > *:nth-child(2) {
+  animation-delay: 30ms;
+}
+.jn-stagger > *:nth-child(3) {
+  animation-delay: 60ms;
+}
+.jn-stagger > *:nth-child(4) {
+  animation-delay: 90ms;
+}
+.jn-stagger > *:nth-child(5) {
+  animation-delay: 120ms;
+}
+.jn-stagger > *:nth-child(6) {
+  animation-delay: 150ms;
+}
+.jn-stagger > *:nth-child(7) {
+  animation-delay: 175ms;
+}
+.jn-stagger > *:nth-child(n + 8) {
+  animation-delay: 200ms;
+}
+
+/* Reduced motion — honour BOTH the OS setting and the in-app pref
+   (the app adds .reduce-motion to <html> from usePrefs). */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
     transition-duration: 0.001ms !important;
   }
+}
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0.001ms !important;
 }
 
 /* Hide horizontal scrollbars on carousels while keeping scroll */

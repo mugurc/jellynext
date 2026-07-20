@@ -1,8 +1,17 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { usePrefs } from "@/lib/prefs/store";
+
+/** Toggle the global `.reduce-motion` class from the in-app preference. */
+function ReduceMotionSync() {
+  const reduceMotion = usePrefs((s) => s.reduceMotion);
+  useEffect(() => {
+    document.documentElement.classList.toggle("reduce-motion", reduceMotion);
+  }, [reduceMotion]);
+  return null;
+}
 
 /**
  * Client-side providers. React Query holds all server-state (Jellyfin data);
@@ -25,13 +34,8 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <ReduceMotionSync />
       {children}
-      {process.env.NODE_ENV === "development" && (
-        <ReactQueryDevtools
-          initialIsOpen={false}
-          buttonPosition="bottom-left"
-        />
-      )}
     </QueryClientProvider>
   );
 }

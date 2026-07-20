@@ -120,6 +120,27 @@ export function backdropUrl(
   return thumbUrl(item, opts);
 }
 
+/**
+ * The item's title logo (stylized transparent title art), if any — falls back
+ * to the parent's logo (e.g. an episode shows its series' logo). Null when the
+ * item has no logo, so callers can fall back to a plain text title.
+ */
+export function logoUrl(item: BaseItemDto, opts: SizeOpts = {}): string | null {
+  if (item.ImageTags?.Logo) {
+    return itemImageUrl(item.Id!, "Logo", {
+      tag: item.ImageTags.Logo,
+      ...opts,
+    });
+  }
+  if (item.ParentLogoItemId && item.ParentLogoImageTag) {
+    return itemImageUrl(item.ParentLogoItemId, "Logo", {
+      tag: item.ParentLogoImageTag,
+      ...opts,
+    });
+  }
+  return null;
+}
+
 /** Deterministic hue (0–359) from an item id, for gradient fallbacks. */
 export function hueFromId(id?: string | null): number {
   if (!id) return 210;

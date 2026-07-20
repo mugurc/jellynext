@@ -1,14 +1,30 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { Captions, CheckCircle2, Disc3, Layers, Volume2 } from "lucide-react";
+import {
+  Captions,
+  CheckCircle2,
+  Disc3,
+  Layers,
+  Plus,
+  Volume2,
+} from "lucide-react";
 import type {
   BaseItemDto,
   MediaStream,
 } from "@jellyfin/sdk/lib/generated-client";
 import { formatRuntime } from "@/lib/jellyfin/media";
+import { useCurrentUser } from "@/lib/auth/current-user";
+import { SubtitleManagerModal } from "./subtitle-manager-modal";
 import { cn } from "@/lib/utils";
+
+function formatDate(value?: string | null): string {
+  if (!value) return "";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString();
+}
 
 function streamsOfType(
   source: BaseItemDto["MediaSources"],
@@ -29,7 +45,18 @@ function formatBytes(bytes?: number | null): string {
 
 export function DetailsTab({ item }: { item: BaseItemDto }) {
   const t = useTranslations("Detail");
+  const { isAdmin } = useCurrentUser();
   const [sourceIndex, setSourceIndex] = useState(0);
+  const [showAllSubs, setShowAllSubs] = useState(false);
+  const [subsOpen, setSubsOpen] = useState(false);
+  const libraryBase =
+    item.Type === "Series" || item.Type === "Episode" ? "/tv" : "/movies";
+  // Subtitle management applies to playable items with a media source.
+  const canManageSubs =
+    (item.Type === "Movie" ||
+      item.Type === "Episode" ||
+      item.Type === "Video") &&
+    (item.MediaSources?.length ?? 0) > 0;
   const sources = item.MediaSources ?? [];
 
   const audio = streamsOfType(sources, sourceIndex, "Audio");
@@ -47,6 +74,18 @@ export function DetailsTab({ item }: { item: BaseItemDto }) {
     .filter(Boolean);
   const audioLangs = [...new Set(audio.map((a) => a.Language).filter(Boolean))];
   const subLangs = [...new Set(subs.map((s) => s.Language).filter(Boolean))];
+  // Deduplicated human-readable subtitle language names for the chip list.
+  const subtitleNames = [
+    ...new Map(
+      subs.map((s) => {
+        const name = (s.DisplayTitle ?? s.Language ?? "")
+          .split(" - ")[0]
+          .trim();
+        return [name.toLowerCase(), name];
+      }),
+    ).values(),
+  ].filter(Boolean);
+  const SUB_CHIP_CAP = 18;
 
   const facts: { k: string; v: string }[] = [];
   const push = (k: string, v?: string | null) => v && facts.push({ k, v });
@@ -66,6 +105,14 @@ export function DetailsTab({ item }: { item: BaseItemDto }) {
   push(t("factVideo"), video?.DisplayTitle);
   push(t("factAudioLangs"), audioLangs.join(", "));
   push(t("factSubtitles"), subLangs.join(", "));
+  push(t("factCountry"), item.ProductionLocations?.join(", "));
+  push(t("factAdded"), formatDate(item.DateCreated));
+  push(
+    t("factPlayCount"),
+    item.UserData?.PlayCount ? String(item.UserData.PlayCount) : undefined,
+  );
+  push(t("factLastPlayed"), formatDate(item.UserData?.LastPlayedDate));
+  if (isAdmin) push(t("factPath"), item.Path);
 
   return (
     <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[1fr_380px]">
@@ -76,9 +123,51 @@ export function DetailsTab({ item }: { item: BaseItemDto }) {
             className="grid grid-cols-[160px_1fr] gap-5 border-b border-border py-3.5"
           >
             <span className="text-[13.5px] text-muted">{f.k}</span>
-            <span className="text-[13.5px] font-semibold">{f.v}</span>
+            <span className="text-[13.5px] font-semibold break-words">
+              {f.v}
+            </span>
           </div>
         ))}
+
+        {item.ExternalUrls && item.ExternalUrls.length > 0 && (
+          <div className="mt-6">
+            <h4 className="mb-2.5 text-[12px] font-extrabold tracking-[0.08em] text-accent uppercase">
+              {t("linksTitle")}
+            </h4>
+            <div className="flex flex-wrap gap-2">
+              {item.ExternalUrls.filter((u) => u.Url).map((u) => (
+                <a
+                  key={u.Name ?? u.Url}
+                  href={u.Url ?? "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-lg border border-border-strong bg-white/[0.04] px-3 py-1.5 text-[12.5px] font-semibold text-bright transition-colors hover:border-accent hover:text-accent"
+                >
+                  {u.Name}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {item.Tags && item.Tags.length > 0 && (
+          <div className="mt-6">
+            <h4 className="mb-2.5 text-[12px] font-extrabold tracking-[0.08em] text-accent uppercase">
+              {t("tagsTitle")}
+            </h4>
+            <div className="flex flex-wrap gap-1.5">
+              {item.Tags.map((tag) => (
+                <Link
+                  key={tag}
+                  href={`${libraryBase}?tag=${encodeURIComponent(tag)}`}
+                  className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[12px] font-semibold text-bright transition-colors hover:bg-accent hover:text-on-accent"
+                >
+                  {tag}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-4">
@@ -91,7 +180,7 @@ export function DetailsTab({ item }: { item: BaseItemDto }) {
             <div className="mb-5 flex flex-col gap-2">
               {sources.map((src, i) => (
                 <button
-                  key={src.Id ?? i}
+                  key={`${src.Id ?? "src"}-${i}`}
                   type="button"
                   onClick={() => setSourceIndex(i)}
                   className={cn(
@@ -147,36 +236,62 @@ export function DetailsTab({ item }: { item: BaseItemDto }) {
         )}
 
         <div className="rounded-2xl border border-border bg-surface p-5">
-          <SectionTitle
-            icon={<Captions className="size-5" />}
-            label={t("subtitlesAvailable")}
-          />
-          <div className="flex flex-col gap-2">
-            {subs.length ? (
-              subs.map((s) => (
-                <div
-                  key={s.Index}
-                  className="flex items-center gap-3 rounded-lg bg-white/[0.03] px-3 py-2.5"
-                >
-                  <span className="flex-none rounded bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-extrabold text-muted">
-                    {s.Codec?.toUpperCase() ?? "SUB"}
-                  </span>
-                  <span className="flex-1 truncate text-[13px] font-semibold">
-                    {s.DisplayTitle ?? s.Language}
-                  </span>
-                  {s.IsDefault && (
-                    <span className="flex-none rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-bold text-accent">
-                      {t("active")}
-                    </span>
-                  )}
-                </div>
-              ))
-            ) : (
-              <span className="text-[12.5px] text-muted">{t("none")}</span>
+          <div className="flex items-center justify-between">
+            <SectionTitle
+              icon={<Captions className="size-5" />}
+              label={t("subtitlesAvailable")}
+            />
+            {canManageSubs && (
+              <button
+                type="button"
+                onClick={() => setSubsOpen(true)}
+                className="mb-3.5 flex items-center gap-1.5 rounded-lg border border-border-strong px-2.5 py-1.5 text-[12px] font-bold text-accent transition-colors hover:bg-accent/10"
+              >
+                <Plus className="size-3.5" /> {t("manageSubtitles")}
+              </button>
             )}
           </div>
+          {subtitleNames.length ? (
+            <>
+              <div className="-mt-1 mb-3 text-[12.5px] text-muted">
+                {t("subtitleLangCount", { count: subtitleNames.length })}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {(showAllSubs
+                  ? subtitleNames
+                  : subtitleNames.slice(0, SUB_CHIP_CAP)
+                ).map((name) => (
+                  <span
+                    key={name}
+                    className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[12px] font-semibold text-bright"
+                  >
+                    {name}
+                  </span>
+                ))}
+              </div>
+              {subtitleNames.length > SUB_CHIP_CAP && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllSubs((v) => !v)}
+                  className="mt-3 text-[12.5px] font-bold text-accent transition-[filter] hover:brightness-110"
+                >
+                  {showAllSubs
+                    ? t("showLess")
+                    : t("showMore", {
+                        count: subtitleNames.length - SUB_CHIP_CAP,
+                      })}
+                </button>
+              )}
+            </>
+          ) : (
+            <span className="text-[12.5px] text-muted">{t("none")}</span>
+          )}
         </div>
       </div>
+
+      {subsOpen && (
+        <SubtitleManagerModal item={item} onClose={() => setSubsOpen(false)} />
+      )}
     </div>
   );
 }

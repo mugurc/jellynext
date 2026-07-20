@@ -46,7 +46,7 @@ export function Carousel({
       <div className="relative">
         <div
           ref={scrollerRef}
-          className="no-scrollbar flex gap-4 overflow-x-auto scroll-smooth pb-1.5"
+          className="jn-stagger no-scrollbar flex gap-4 overflow-x-auto scroll-smooth pb-1.5"
         >
           {children}
         </div>

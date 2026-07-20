@@ -1,12 +1,5 @@
-import { getTranslations } from "next-intl/server";
-import { ComingSoon } from "@/components/common/coming-soon";
+import { MusicView } from "@/components/music/music-view";
 
-export default async function MusicPage() {
-  const t = await getTranslations("Nav");
-  return (
-    <ComingSoon
-      title={t("music")}
-      note="Artists, albums, the album/artist detail views, and the now-playing bar arrive in step 4."
-    />
-  );
+export default function MusicPage() {
+  return <MusicView />;
 }

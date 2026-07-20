@@ -1,6 +1,7 @@
 import "server-only";
 
 import { CLIENT_NAME, CLIENT_VERSION, DEVICE_NAME } from "./constants";
+import { jellyfinFetch } from "@/lib/http/dispatcher";
 
 /** Build the Jellyfin `Authorization` header (token optional pre-auth). */
 export function authHeader(deviceId: string, token?: string): string {
@@ -57,7 +58,7 @@ export async function jfFetch(req: JfRequest): Promise<Response> {
     headers["Content-Type"] = "application/json";
     payload = JSON.stringify(body);
   }
-  return fetch(buildUrl(serverUrl, path, query), {
+  return jellyfinFetch(buildUrl(serverUrl, path, query), {
     method,
     headers,
     body: payload,

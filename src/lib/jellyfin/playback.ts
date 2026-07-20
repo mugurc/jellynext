@@ -114,6 +114,23 @@ export function resolvePlayback(
   return { url: directStreamUrl(itemId, source), isHls: false };
 }
 
+/** Proxy URL for a directly-playable audio stream (original file). */
+export function audioStreamUrl(itemId: string): string {
+  return `/api/jf/Audio/${itemId}/stream?static=true`;
+}
+
+/**
+ * Proxy URL for an on-the-fly WebVTT rendition of a text subtitle stream,
+ * suitable for a `<track>` element (rendered client-side, no transcode).
+ */
+export function subtitleTrackUrl(
+  itemId: string,
+  mediaSourceId: string,
+  streamIndex: number,
+): string {
+  return `/api/jf/Videos/${itemId}/${mediaSourceId}/Subtitles/${streamIndex}/0/Stream.vtt`;
+}
+
 // ── Progress reporting ──────────────────────────────────────────────
 interface ProgressBody {
   ItemId: string;

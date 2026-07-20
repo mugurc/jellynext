@@ -7,6 +7,9 @@ export interface CurrentUser {
   userName: string;
   isAdmin: boolean;
   serverUrl: string;
+  deviceId: string;
+  /** Whether the server has a TMDb key configured (gates the Discover page). */
+  tmdbEnabled: boolean;
 }
 
 const CurrentUserContext = createContext<CurrentUser | null>(null);
