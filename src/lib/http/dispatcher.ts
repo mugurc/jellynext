@@ -29,13 +29,25 @@ export const jellyfinDispatcher = new Agent({
 
 type DispatchableInit = RequestInit & { dispatcher?: Agent };
 
+/**
+ * A desktop-browser User-Agent. Jellyfin often sits behind Cloudflare, whose
+ * bot protection can 403 (error 1010) requests from a bare server runtime like
+ * undici. Presenting a normal browser UA avoids that block for server→server
+ * calls (the browser talks to us; we talk to Jellyfin on its behalf).
+ */
+const BROWSER_UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+
 /** `fetch` routed through {@link jellyfinDispatcher} (Node reads `dispatcher`). */
 export function jellyfinFetch(
   input: string | URL,
   init?: RequestInit,
 ): Promise<Response> {
+  const headers = new Headers(init?.headers);
+  if (!headers.has("user-agent")) headers.set("user-agent", BROWSER_UA);
   const withDispatcher: DispatchableInit = {
     ...init,
+    headers,
     dispatcher: jellyfinDispatcher,
   };
   return fetch(input, withDispatcher);

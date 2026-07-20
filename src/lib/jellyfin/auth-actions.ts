@@ -59,7 +59,10 @@ export async function getServerInfo(
       path: "/System/Info/Public",
     });
     return { ok: true, info };
-  } catch {
+  } catch (err) {
+    // Surface the real reason in the server logs (DNS/timeout/TLS/HTTP status)
+    // so unreachable failures behind a reverse proxy can be diagnosed.
+    console.error(`[getServerInfo] ${target} failed:`, err);
     return { ok: false, error: "unreachable" };
   }
 }
