@@ -1,0 +1,97 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { authHeader } from "@/lib/jellyfin/rest";
+import { getSession } from "@/lib/jellyfin/session";
+import { jellyfinFetch } from "@/lib/http/dispatcher";
+
+export const dynamic = "force-dynamic";
+
+// Headers worth forwarding from the client to Jellyfin (media range requests etc.)
+const FORWARD_REQ_HEADERS = ["range", "if-none-match", "if-modified-since"];
+// Headers worth surfacing back from Jellyfin to the client.
+const FORWARD_RES_HEADERS = [
+  "content-type",
+  "content-length",
+  "content-range",
+  "accept-ranges",
+  "content-disposition",
+  "cache-control",
+  "etag",
+  "last-modified",
+  "x-content-duration",
+  // Redirects are passed through unfollowed (`redirect: "manual"`); without the
+  // target the client would get a 30x it can do nothing with.
+  "location",
+];
+
+async function handle(
+  req: NextRequest,
+  ctx: { params: Promise<{ path: string[] }> },
+): Promise<Response> {
+  const session = await getSession();
+  if (!session) {
+    return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
+  }
+
+  const { path } = await ctx.params;
+  const search = req.nextUrl.search;
+  const target = `${session.serverUrl}/${path.map(encodeURIComponent).join("/")}${search}`;
+
+  const headers = new Headers();
+  headers.set("Authorization", authHeader(session.deviceId, session.token));
+  for (const h of FORWARD_REQ_HEADERS) {
+    const value = req.headers.get(h);
+    if (value) headers.set(h, value);
+  }
+
+  const method = req.method.toUpperCase();
+  const hasBody = method !== "GET" && method !== "HEAD";
+  if (hasBody) {
+    const contentType = req.headers.get("content-type");
+    if (contentType) headers.set("content-type", contentType);
+  }
+
+  let upstream: Response;
+  try {
+    upstream = await jellyfinFetch(target, {
+      method,
+      headers,
+      body: hasBody ? await req.arrayBuffer() : undefined,
+      redirect: "manual",
+      cache: "no-store",
+      // Tie the upstream request to the client's lifetime: when the browser
+      // aborts (seek, navigation, HLS segment cancel), the upstream fetch is
+      // aborted too, freeing the socket. Without this, cancelled media streams
+      // leak connections until undici's pool is exhausted and every request hangs.
+      signal: req.signal,
+    });
+  } catch {
+    // An aborted client request lands here too; nothing to return to a gone client.
+    return NextResponse.json(
+      { error: "upstream-unreachable" },
+      { status: 502 },
+    );
+  }
+
+  const resHeaders = new Headers();
+  for (const h of FORWARD_RES_HEADERS) {
+    const value = upstream.headers.get(h);
+    if (value) resHeaders.set(h, value);
+  }
+  // Cache immutable artwork aggressively on the client.
+  if (path[0] === "Items" && path.includes("Images")) {
+    resHeaders.set("cache-control", "private, max-age=86400");
+  }
+
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: resHeaders,
+  });
+}
+
+export const GET = handle;
+export const POST = handle;
+export const PUT = handle;
+export const PATCH = handle;
+export const DELETE = handle;
+export const HEAD = handle;
