@@ -173,7 +173,7 @@ export function PersonView({ personId }: { personId: string }) {
         ) : filmItems.length ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(176px,1fr))] gap-[18px]">
             {filmItems.map((i) => (
-              <MediaCard key={i.Id} item={i} className="w-full" />
+              <MediaCard key={i.Id} item={i} />
             ))}
           </div>
         ) : (

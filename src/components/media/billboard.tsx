@@ -89,25 +89,24 @@ export function Billboard({ items }: { items: BaseItemDto[] }) {
       <div className="absolute inset-0 bg-gradient-to-r from-bg via-bg/60 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-t from-bg to-transparent" />
 
+      {/* Bottom right, not the vertical edges: centred arrows put the left one
+          straight over the logo and CTAs, and the right one over the only part
+          of the backdrop the gradient leaves visible. This corner is already
+          darkened by the bottom gradient and carries nothing else. Aligned to
+          the content column's own bottom padding so it shares that baseline. */}
       {count > 1 && (
-        <>
-          <button
-            type="button"
+        <div className="absolute right-10 bottom-16 z-10 flex items-center gap-2">
+          <BillboardArrow
+            side="left"
+            label={t("previous")}
             onClick={() => go(-1)}
-            aria-label={t("previous")}
-            className="absolute top-1/2 left-4 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white/75 backdrop-blur-sm transition hover:scale-105 hover:bg-black/55 hover:text-white"
-          >
-            <ChevronLeft className="size-6" />
-          </button>
-          <button
-            type="button"
+          />
+          <BillboardArrow
+            side="right"
+            label={t("next")}
             onClick={() => go(1)}
-            aria-label={t("next")}
-            className="absolute top-1/2 right-4 z-10 flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/30 text-white/75 backdrop-blur-sm transition hover:scale-105 hover:bg-black/55 hover:text-white"
-          >
-            <ChevronRight className="size-6" />
-          </button>
-        </>
+          />
+        </div>
       )}
 
       <div className="relative max-w-[660px] px-10 pb-16">
@@ -231,5 +230,32 @@ export function Billboard({ items }: { items: BaseItemDto[] }) {
         )}
       </div>
     </section>
+  );
+}
+
+/**
+ * Slide control for the hero. No disabled state: the billboard wraps around, so
+ * neither direction ever runs out. Kept at a comfortable size and shown on touch
+ * too — unlike the media rows, the hero has no swipe gesture to fall back on.
+ */
+function BillboardArrow({
+  side,
+  label,
+  onClick,
+}: {
+  side: "left" | "right";
+  label: string;
+  onClick: () => void;
+}) {
+  const Icon = side === "left" ? ChevronLeft : ChevronRight;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="flex size-10 items-center justify-center rounded-full bg-black/30 text-white/75 backdrop-blur-sm transition hover:scale-105 hover:bg-black/55 hover:text-white"
+    >
+      <Icon className="size-5" />
+    </button>
   );
 }

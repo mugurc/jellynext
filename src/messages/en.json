@@ -633,6 +633,19 @@
     "dismiss": "Dismiss",
     "empty": "You're all caught up"
   },
+  "Card": {
+    "more": "More",
+    "play": "Play",
+    "playItem": "Play {title}",
+    "resume": "Resume",
+    "resetProgress": "Reset progress",
+    "markWatched": "Mark watched",
+    "markUnwatched": "Mark unwatched",
+    "addFavorite": "Add to favorites",
+    "removeFavorite": "Remove from favorites",
+    "addToList": "Add to list",
+    "goToSeries": "Go to series"
+  },
   "Common": {
     "play": "Play",
     "details": "Details",

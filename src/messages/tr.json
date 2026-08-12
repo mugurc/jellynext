@@ -436,8 +436,8 @@
     "deleteWarning": "\"{name}\" ve dosyaları sunucudan kalıcı olarak silinecek. Bu işlem geri alınamaz.",
     "cancel": "Vazgeç",
     "watched": "İzlendi",
-    "markWatched": "İzlendi işaretle",
-    "markUnwatched": "İzlenmedi işaretle",
+    "markWatched": "İzlendi olarak işaretle",
+    "markUnwatched": "İzlenmedi olarak işaretle",
     "addToList": "Listeye ekle",
     "more": "Daha fazla",
     "continuing": "Devam ediyor",
@@ -632,6 +632,19 @@
     "markAllRead": "Tümünü okundu işaretle",
     "dismiss": "Kapat",
     "empty": "Her şeyi gördün"
+  },
+  "Card": {
+    "more": "Daha fazla",
+    "play": "Oynat",
+    "playItem": "{title} oynat",
+    "resume": "Devam et",
+    "resetProgress": "İlerlemeyi sıfırla",
+    "markWatched": "İzlendi olarak işaretle",
+    "markUnwatched": "İzlenmedi olarak işaretle",
+    "addFavorite": "Favorilere ekle",
+    "removeFavorite": "Favorilerden çıkar",
+    "addToList": "Listeye ekle",
+    "goToSeries": "Diziye git"
   },
   "Common": {
     "play": "Oynat",

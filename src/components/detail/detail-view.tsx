@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -43,6 +43,8 @@ import {
   useTogglePlayed,
 } from "@/lib/jellyfin/queries";
 import { MediaCard } from "@/components/media/media-card";
+import { MenuItem } from "@/components/common/menu";
+import { FadeImg } from "@/components/common/fade-img";
 import { GridSkeleton } from "@/components/media/skeletons";
 import { useCurrentUser } from "@/lib/auth/current-user";
 import { jf } from "@/lib/jellyfin/browser";
@@ -212,14 +214,20 @@ export function DetailView({ itemId }: { itemId: string }) {
     <div className="animate-jn-fade">
       {/* Hero */}
       <section className="relative flex min-h-[540px] items-end overflow-hidden">
+        {/* The gradient sits underneath so the hero is never blank while the
+            backdrop loads; the artwork fades in over it once decoded. */}
         <div
           className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: backdrop
-              ? `url("${backdrop}"), ${gradientFallback(item.Id)}`
-              : gradientFallback(item.Id),
-          }}
+          style={{ backgroundImage: gradientFallback(item.Id) }}
         />
+        {backdrop && (
+          <FadeImg
+            src={backdrop}
+            alt=""
+            priority
+            className="absolute inset-0 size-full object-cover object-center"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-r from-bg via-bg/55 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-bg to-transparent" />
 
@@ -265,11 +273,11 @@ export function DetailView({ itemId }: { itemId: string }) {
               )}
             </div>
             {logo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <FadeImg
                 src={logo}
                 alt={item.Name ?? ""}
-                className="animate-jn-fade mb-4 max-h-[120px] w-auto max-w-[460px] object-contain object-left drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
+                priority
+                className="mb-4 max-h-[120px] w-auto max-w-[460px] object-contain object-left drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
               />
             ) : (
               <h1 className="mb-4 text-[52px] leading-none font-extrabold tracking-[-0.03em] text-balance">
@@ -552,7 +560,7 @@ function RelatedTab({ itemId }: { itemId: string }) {
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(176px,1fr))] gap-[18px]">
       {items.map((i) => (
-        <MediaCard key={i.Id} item={i} className="w-full" />
+        <MediaCard key={i.Id} item={i} />
       ))}
     </div>
   );
@@ -903,34 +911,6 @@ function DetailMenu({
         </>
       )}
     </div>
-  );
-}
-
-function MenuItem({
-  icon,
-  label,
-  onClick,
-  danger,
-}: {
-  icon: ReactNode;
-  label: string;
-  onClick: () => void;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[13.5px] font-semibold transition-colors",
-        danger
-          ? "text-danger-soft hover:bg-danger/10"
-          : "text-text hover:bg-white/[0.06]",
-      )}
-    >
-      <span className={danger ? "text-danger-soft" : "text-muted"}>{icon}</span>
-      {label}
-    </button>
   );
 }
 

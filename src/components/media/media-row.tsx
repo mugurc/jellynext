@@ -25,6 +25,11 @@ export function MediaRow({
   if (isLoading) return <CarouselSkeleton variant={variant} />;
   if (!items?.length) return null;
 
+  // Cards size themselves to their container; in a scroller that container is
+  // the card itself, so the fixed track width belongs here rather than in the
+  // card, where it used to fight the grid layouts.
+  const width = variant === "wide" ? "w-[326px]" : "w-[184px]";
+
   return (
     <Carousel title={title} seeAllHref={seeAllHref}>
       {items.map((item) => (
@@ -33,6 +38,7 @@ export function MediaRow({
           item={item}
           variant={variant}
           showProgress={showProgress}
+          className={`${width} flex-none`}
         />
       ))}
     </Carousel>

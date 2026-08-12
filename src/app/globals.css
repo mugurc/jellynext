@@ -124,8 +124,14 @@ input::placeholder {
   --dur-fast: 130ms;
   --dur: 200ms;
   --dur-slow: 300ms;
+  /* Hero artwork arrives whenever the network says so, not on a beat with the
+     rest of the UI, so it gets a longer reveal of its own. */
+  --dur-image: 700ms;
   /* Gentle deceleration curve for the tiny movements we do use. */
   --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* Eased at both ends. On opacity, --ease-out rushes to near-full in the first
+     frames and then crawls, which reads as a snap; this ramps up gently. */
+  --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Entry animations */
@@ -185,6 +191,77 @@ input::placeholder {
 }
 .animate-jn-breathe {
   animation: jnBreathe 2s ease-in-out infinite;
+}
+
+/* Artwork reveal. Driven by the image's load event rather than mount, so it is
+   a transition, not an animation — pair with an opacity-0 → opacity-100 flip. */
+.jn-img-fade {
+  transition: opacity var(--dur-image) var(--ease-soft);
+}
+
+/* Controls that appear when a `.group` ancestor is hovered. Keyboard users get
+   them through focus, and pointers that cannot hover at all keep them on
+   permanently — otherwise the controls are simply unreachable on touch.
+   Callers bring their own transition utility; declaring one here would override
+   whatever else the element is already transitioning.
+
+   `:has(:focus-visible)` rather than `:focus-within`: a mouse click leaves the
+   button focused, and plain focus-within would then hold the controls open long
+   after the pointer has left the card. focus-visible only matches the keyboard. */
+.jn-hover-reveal {
+  opacity: 0;
+}
+.group:hover .jn-hover-reveal,
+.group:has(:focus-visible) .jn-hover-reveal {
+  opacity: 1;
+}
+@media (hover: none) {
+  .jn-hover-reveal {
+    opacity: 1;
+  }
+}
+
+/* Card action row. Every control keeps its slot at all times; while idle the
+   whole row shifts left by however much its leading hidden controls occupy, so
+   a lone pinned badge still sits against the edge. Only `transform` animates —
+   collapsing each control's own width instead squeezes the icon inside it, which
+   reads as a curtain wiping across the glyph rather than a slide.
+   The shift comes in as --jn-idle-shift from the component. */
+.jn-card-actions {
+  transform: translateX(var(--jn-idle-shift, 0px));
+  transition: transform var(--dur) var(--ease-out);
+}
+.group:hover .jn-card-actions,
+.group:has(:focus-visible) .jn-card-actions {
+  transform: none;
+}
+@media (hover: none) {
+  .jn-card-actions {
+    transform: none;
+  }
+}
+
+/* Row paging arrows. Hidden where the pointer cannot hover: those devices swipe
+   the row directly, so the buttons would only be taking up header space. */
+@media (hover: none) {
+  .jn-row-arrows {
+    display: none;
+  }
+}
+
+/* Skeleton pulse. Opacity only, like everything else in this system — Tailwind's
+   animate-pulse runs on its own duration scale and drifts out of step. */
+@keyframes jnSkeleton {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.jn-skeleton {
+  animation: jnSkeleton 1.6s ease-in-out infinite;
 }
 
 /* Billboard indicator: the active dot fills left→right over its dwell time.

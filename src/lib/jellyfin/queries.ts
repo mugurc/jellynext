@@ -561,6 +561,67 @@ export function useApplyIdentify() {
 
 // ── User item state (favorite / played / extras) ─────────────────────
 
+type UserDataPatch = Partial<NonNullable<BaseItemDto["UserData"]>>;
+
+/**
+ * `data` with the matching item's UserData patched, or the very same reference
+ * back when the item is not in there. That identity check matters: this runs
+ * against every cached query, and handing back a fresh object would re-render
+ * screens that did not change. Covers the three shapes the API returns — a bare
+ * item, a `{ Items: [...] }` result, and a plain array.
+ */
+function withPatchedUserData<T>(data: T, id: string, patch: UserDataPatch): T {
+  if (!data || typeof data !== "object") return data;
+
+  if (Array.isArray(data)) {
+    let touched = false;
+    const next = data.map((entry) => {
+      const patched = withPatchedUserData(entry, id, patch);
+      if (patched !== entry) touched = true;
+      return patched;
+    });
+    return touched ? (next as T) : data;
+  }
+
+  const obj = data as Record<string, unknown>;
+  if (obj.Id === id) {
+    return {
+      ...obj,
+      UserData: { ...(obj.UserData as object | null), ...patch },
+    } as T;
+  }
+  if (Array.isArray(obj.Items)) {
+    const items = withPatchedUserData(obj.Items, id, patch);
+    return items === obj.Items ? data : ({ ...obj, Items: items } as T);
+  }
+  return data;
+}
+
+/**
+ * Writes a UserData patch into every cache holding the item and returns a
+ * rollback. This is what lets a click land immediately: the card repaints from
+ * cache while the request is still in flight, and the server stays the final
+ * word via the invalidation on settle.
+ */
+function patchUserDataEverywhere(
+  qc: ReturnType<typeof useQueryClient>,
+  id: string,
+  patch: UserDataPatch,
+) {
+  const undo: [readonly unknown[], unknown][] = [];
+  for (const query of qc.getQueryCache().getAll()) {
+    const prev = query.state.data;
+    const next = withPatchedUserData(prev, id, patch);
+    if (next !== prev) {
+      undo.push([query.queryKey, prev]);
+      qc.setQueryData(query.queryKey, next);
+    }
+  }
+  return () => {
+    for (const [key, prev] of undo) qc.setQueryData(key, prev);
+  };
+}
+
 /** Toggle an item's favorite flag. */
 export function useToggleFavorite() {
   const qc = useQueryClient();
@@ -570,12 +631,14 @@ export function useToggleFavorite() {
       favorite
         ? jf.post(`/Users/${userId}/FavoriteItems/${id}`)
         : jf.delete(`/Users/${userId}/FavoriteItems/${id}`),
-    onSuccess: (_d, v) => {
+    onMutate: ({ id, favorite }) =>
+      patchUserDataEverywhere(qc, id, { IsFavorite: favorite }),
+    onError: (_err, _vars, rollback) => rollback?.(),
+    onSettled: (_d, _e, v) => {
       qc.invalidateQueries({ queryKey: ["item", userId, v.id] });
-      // The heart also shows on cards and drives the Favorites rows/tab, so the
-      // lists have to refresh too — not just the detail page.
+      // The heart also drives which items the Favorites rows/tab contain, and
+      // membership is something only the server can settle.
       invalidateItemLists(qc);
-      qc.invalidateQueries({ queryKey: ["library"] });
     },
   });
 }
@@ -589,12 +652,62 @@ export function useTogglePlayed() {
       played
         ? jf.post(`/Users/${userId}/PlayedItems/${id}`)
         : jf.delete(`/Users/${userId}/PlayedItems/${id}`),
-    onSuccess: (_d, v) => {
+    onMutate: ({ id, played }) =>
+      patchUserDataEverywhere(qc, id, {
+        Played: played,
+        // The server clears the resume position on both transitions, so the
+        // progress bar has to go in the same frame the tick appears.
+        PlaybackPositionTicks: 0,
+        PlayedPercentage: 0,
+      }),
+    onError: (_err, _vars, rollback) => rollback?.(),
+    onSettled: (_d, _e, v) => {
       qc.invalidateQueries({ queryKey: ["item", userId, v.id] });
-      // Episode lists / next-up reflect watched state too.
-      qc.invalidateQueries({ queryKey: ["episodes"] });
-      qc.invalidateQueries({ queryKey: ["seriesNextUp"] });
-      qc.invalidateQueries({ queryKey: ["nextUp"] });
+      // Marking watched also hides the item from Next Up and Continue Watching,
+      // so every list that shows either has to refresh.
+      invalidateItemLists(qc);
+    },
+  });
+}
+
+/**
+ * Clear an item's resume position so it drops out of Continue Watching,
+ * without touching its watched flag.
+ */
+export function useResetProgress() {
+  const qc = useQueryClient();
+  const { userId } = useCurrentUser();
+  return useMutation({
+    mutationFn: ({
+      id,
+      userData,
+    }: {
+      id: string;
+      userData: BaseItemDto["UserData"];
+    }) =>
+      jf.post(
+        `/UserItems/${id}/UserData`,
+        {
+          PlaybackPositionTicks: 0,
+          PlayedPercentage: 0,
+          // The endpoint writes the whole user-data record, so anything we are
+          // not changing has to be sent back as-is or it gets cleared.
+          Played: userData?.Played ?? false,
+          IsFavorite: userData?.IsFavorite ?? false,
+          PlayCount: userData?.PlayCount ?? 0,
+          Likes: userData?.Likes ?? null,
+        },
+        { userId },
+      ),
+    onMutate: ({ id }) =>
+      patchUserDataEverywhere(qc, id, {
+        PlaybackPositionTicks: 0,
+        PlayedPercentage: 0,
+      }),
+    onError: (_err, _vars, rollback) => rollback?.(),
+    onSettled: (_d, _e, v) => {
+      qc.invalidateQueries({ queryKey: ["item", userId, v.id] });
+      invalidateItemLists(qc);
     },
   });
 }
