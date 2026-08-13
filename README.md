@@ -6,13 +6,14 @@
 
 **A modern, cinematic web client for [Jellyfin](https://jellyfin.org) — built to exercise the _full_ Jellyfin API, read _and_ write.**
 
+[![Live demo](https://img.shields.io/badge/Live_demo-jellynext--demo.vercel.app-4d9fff?logo=vercel&logoColor=white)](https://jellynext-demo.vercel.app)
 [![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs&logoColor=white)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38BDF8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#-license)
 
-**[Try it in one command](#try-it-without-installing-anything)** — no Jellyfin server of your own required.
+**[Open the live demo →](https://jellynext-demo.vercel.app)** — no install, no Jellyfin server of your own required.
 
 </div>
 
@@ -184,15 +185,15 @@ flowchart LR
 
 ### Try it without installing anything
 
-You don't need a Jellyfin server to look around — the Jellyfin project runs a [public demo server](https://demo.jellyfin.org/stable), and JellyNext can be pointed straight at it:
+**[jellynext-demo.vercel.app](https://jellynext-demo.vercel.app)** — a live instance pointed at the Jellyfin project's [public demo server](https://demo.jellyfin.org/stable). Pick the **demo** user and leave the password blank.
+
+Rather run it yourself? Same thing, one command:
 
 ```bash
 docker run --rm -p 3000:3000 \
   -e JELLYFIN_SERVER_URL=https://demo.jellyfin.org/stable \
   ghcr.io/mugurc/jellynext:latest
 ```
-
-Open <http://localhost:3000>, pick the **demo** user, and leave the password blank.
 
 > [!NOTE]
 > The demo server is read-only and shared, so write actions (favorites, metadata edits, admin screens) will fail there. Point JellyNext at your own server to use them.
