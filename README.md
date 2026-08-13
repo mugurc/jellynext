@@ -1,6 +1,8 @@
 <div align="center">
 
-# 🎬 JellyNext
+<img src="public/logo-mark.svg" alt="" width="96" />
+
+# JellyNext
 
 **A modern, cinematic web client for [Jellyfin](https://jellyfin.org) — built to exercise the _full_ Jellyfin API, read _and_ write.**
 
@@ -72,6 +74,7 @@ JellyNext is an alternative front-end for your own Jellyfin media server. Where 
 - **Home** — billboard hero, Continue Watching, Next Up, Your Favorites, server-computed **Suggestions**, "New in your library," Top Rated, per-library "Recently Added," and genre-discovery rows.
 - **Movies / TV** libraries — rich filtering (genre, year, official rating, tags, studios, A–Z jump, quick watched/unwatched/favorites), **bidirectional sorting** (pick a field, toggle ascending/descending), and grid/list layouts. Sort + view choices sync **server-side via DisplayPreferences** so they follow you across devices.
 - **Discover** (optional, TMDb) — worldwide trending & new movies/shows as info-only pages, with trailers and a "in your library?" match. The Discover tab only appears when a TMDb key is configured.
+- **Card quick actions** — hover any poster to toggle watched or favorite without opening it (applied optimistically, so the card flips immediately and reconciles with the server afterwards), plus a `⋮` menu for play/resume, **reset progress** (undo a resume point), add to a playlist, and jump to the parent series.
 - **Search** — debounced, with type chips (movies/shows/episodes/collections/people), a people row, and recent-search history.
 - **Music** — albums & artists, album/artist detail, and a persistent Now-Playing bar.
 - **Live TV** — channels, guide, and recordings (gracefully empty when Live TV isn't configured).
@@ -169,7 +172,7 @@ flowchart LR
 **Key pieces**
 
 - **BFF proxy** (`app/api/jf/[...path]/route.ts`) — forwards every Jellyfin request, injecting the access token + device id from the httpOnly `jn_session` cookie. Passes through `Range` headers and request aborts (`signal`) so seeking and track switches cancel cleanly.
-- **Custom undici dispatcher** (`lib/http/dispatcher.ts`) — a short `keepAliveTimeout` (4s) and `headersTimeout` (30s) prevent stale keep-alive sockets from hanging playback when the server sits behind a reverse proxy / Cloudflare.
+- **Custom undici dispatcher** (`lib/http/dispatcher.ts`) — a bounded `headersTimeout` (30s, against Node's ~5 minute default) is what stops a dead keep-alive socket from freezing every page that needs Jellyfin data when the server sits behind a reverse proxy / Cloudflare. Keep-alive itself is deliberately _not_ ultra-short (30s): recycling sockets aggressively made nearly every request pay a fresh TCP + TLS handshake, which was felt most when starting playback. Outbound calls also carry a desktop browser `User-Agent`, since Cloudflare bot protection can 403 a bare server runtime.
 - **TMDb proxy** (`app/api/tmdb/[...path]/route.ts`) — GET-only; injects `TMDB_API_KEY` server-side and returns `501` when it isn't configured, keeping the key off the client.
 - **Sessions** (`lib/jellyfin/session.ts`) — httpOnly `jn_session` (server URL, token, user, device, admin flag); a readable `jn_server` for the active server; and `jn_locale` for the UI language.
 - **Real-time** (`components/shell/realtime-messages.tsx` + `app/api/socket-info/route.ts`) — one WebSocket carries DisplayMessages, remote playback control, SyncPlay, live sessions, and Activity Log updates.
@@ -187,7 +190,7 @@ flowchart LR
 
 ```bash
 # 1. Clone
-git clone https://github.com/<your-username>/jellynext.git
+git clone https://github.com/mugurc/jellynext.git
 cd jellynext
 
 # 2. Install dependencies
@@ -228,8 +231,7 @@ NEXT_PUBLIC_JELLYFIN_SERVER_URL=https://jellyfin.example.com
 TMDB_API_KEY=your_tmdb_v3_api_key
 ```
 
-> [!TIP]
-> Consider committing a `.env.example` (without real values) so contributors know which variables exist.
+A committed [`.env.example`](.env.example) lists the same variables with empty values, so `cp .env.example .env.local` gives you a filled-in starting point.
 
 ## Available scripts
 
