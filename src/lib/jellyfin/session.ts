@@ -2,7 +2,7 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import {
-  DEFAULT_SERVER_URL,
+  defaultServerUrl,
   QUICK_CONNECT_COOKIE,
   SERVER_COOKIE,
   SESSION_COOKIE,
@@ -63,7 +63,7 @@ export async function clearSession(): Promise<void> {
 export async function getActiveServerUrl(): Promise<string> {
   const store = await cookies();
   const fromCookie = store.get(SERVER_COOKIE)?.value;
-  return (fromCookie || DEFAULT_SERVER_URL).replace(/\/+$/, "");
+  return (fromCookie || defaultServerUrl()).replace(/\/+$/, "");
 }
 
 export async function setActiveServerUrl(url: string): Promise<void> {

@@ -9,7 +9,23 @@ export const SERVER_COOKIE = "jn_server";
 /** httpOnly cookie holding a pending Quick Connect attempt. */
 export const QUICK_CONNECT_COOKIE = "jn_qc";
 
-/** Compile-time default server; overridable in-app via the SERVER_COOKIE. */
-export const DEFAULT_SERVER_URL = (
-  process.env.NEXT_PUBLIC_JELLYFIN_SERVER_URL ?? ""
-).replace(/\/+$/, "");
+/**
+ * Default server, used until someone picks one (which is then kept in the
+ * SERVER_COOKIE).
+ *
+ * Read per call rather than at module scope, and from a server-only name: a
+ * `NEXT_PUBLIC_` value is inlined into the bundle during `next build`, so a
+ * prebuilt Docker image could never be pointed at a different server. Reading
+ * `JELLYFIN_SERVER_URL` at request time is what makes `docker run -e …` work.
+ * The public name stays as a fallback so existing setups keep working.
+ *
+ * Only ever called from server code (see session.ts), so nothing here reaches
+ * the browser bundle.
+ */
+export function defaultServerUrl(): string {
+  const raw =
+    process.env.JELLYFIN_SERVER_URL ||
+    process.env.NEXT_PUBLIC_JELLYFIN_SERVER_URL ||
+    "";
+  return raw.replace(/\/+$/, "");
+}

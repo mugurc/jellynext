@@ -1,0 +1,16 @@
+services:
+  jellynext:
+    image: ghcr.io/mugurc/jellynext:latest
+    # To build from a clone instead of pulling the published image:
+    # build: .
+    container_name: jellynext
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Optional. Pre-fills the server address on the login screen; people can
+      # still enter a different one. Leave it out to always ask.
+      JELLYFIN_SERVER_URL: https://jellyfin.example.com
+      # Optional. Enables the Discover page. Stays server-side, never sent to
+      # the browser.
+      # TMDB_API_KEY: your_tmdb_v3_api_key

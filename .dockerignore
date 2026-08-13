@@ -1,0 +1,22 @@
+# Rebuilt inside the image
+node_modules
+.next
+out
+build
+
+# Never bake local secrets into a layer
+.env
+.env.*
+
+# Not needed to build
+.git
+.github
+.husky
+docs
+design-ref
+coverage
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+.vercel
+.DS_Store

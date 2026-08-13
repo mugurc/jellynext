@@ -12,6 +12,8 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38BDF8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#-license)
 
+**[Try it in one command](#try-it-without-installing-anything)** — no Jellyfin server of your own required.
+
 </div>
 
 ---
@@ -180,13 +182,45 @@ flowchart LR
 
 ## Getting started
 
-### Prerequisites
+### Try it without installing anything
+
+You don't need a Jellyfin server to look around — the Jellyfin project runs a [public demo server](https://demo.jellyfin.org/stable), and JellyNext can be pointed straight at it:
+
+```bash
+docker run --rm -p 3000:3000 \
+  -e JELLYFIN_SERVER_URL=https://demo.jellyfin.org/stable \
+  ghcr.io/mugurc/jellynext:latest
+```
+
+Open <http://localhost:3000>, pick the **demo** user, and leave the password blank.
+
+> [!NOTE]
+> The demo server is read-only and shared, so write actions (favorites, metadata edits, admin screens) will fail there. Point JellyNext at your own server to use them.
+
+### Run with Docker
+
+```bash
+docker run -d --name jellynext -p 3000:3000 \
+  -e JELLYFIN_SERVER_URL=https://jellyfin.example.com \
+  --restart unless-stopped \
+  ghcr.io/mugurc/jellynext:latest
+```
+
+Or with Compose — a ready [`compose.yaml`](compose.yaml) is in the repo:
+
+```bash
+docker compose up -d
+```
+
+Images are published for **linux/amd64** and **linux/arm64**. Every variable is optional: with none set, JellyNext just asks for your server address at login. Because they're read at request time, the same image works against any server — no rebuild needed to change it.
+
+### Run from source
+
+**Prerequisites**
 
 - **Node.js 20.9+** (22 LTS recommended)
 - **npm** (or pnpm / yarn / bun — examples use npm)
 - A running **Jellyfin server** you can reach from where you run JellyNext
-
-### Install & run
 
 ```bash
 # 1. Clone
@@ -205,7 +239,7 @@ npm run dev
 
 Open <http://localhost:3000> and enter your Jellyfin server address on the welcome screen.
 
-### Production build
+**Production build**
 
 ```bash
 npm run build
@@ -214,18 +248,19 @@ npm run start
 
 ## Configuration
 
-All configuration is optional — JellyNext works with zero env vars (you'll just type your server address at login, and the Discover page will be disabled). Create a `.env.local` (git-ignored) to set them:
+All configuration is optional — JellyNext works with zero env vars (you'll just type your server address at login, and the Discover page will be disabled). Set them in the container environment, or in a `.env.local` (git-ignored) when running from source:
 
 | Variable                          | Scope           | Required | Description                                                                                                                                                                                                                                                |
 | --------------------------------- | --------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_JELLYFIN_SERVER_URL` | client          | No       | Pre-fills the server address on the login screen. If unset, login begins with server-address entry.                                                                                                                                                        |
+| `JELLYFIN_SERVER_URL`             | **server only** | No       | Pre-fills the server address on the login screen; users can still enter a different one. If unset, login begins with server-address entry. Read at request time, so it can be changed on a prebuilt image without rebuilding.                              |
 | `TMDB_API_KEY`                    | **server only** | No       | A [TMDb v3 API key](https://developer.themoviedb.org/docs/getting-started). Enables the **Discover** page (worldwide trending/new + title logos). **Without it, the Discover tab and its route are hidden entirely** — the rest of the app works normally. |
+| `NEXT_PUBLIC_JELLYFIN_SERVER_URL` | client          | No       | Deprecated alias for `JELLYFIN_SERVER_URL`, still honoured. Being `NEXT_PUBLIC_`, it is inlined during `next build` and cannot be changed afterwards — prefer the server-only name.                                                                        |
 
 Example `.env.local`:
 
 ```dotenv
 # Optional: pre-fill the login server field
-NEXT_PUBLIC_JELLYFIN_SERVER_URL=https://jellyfin.example.com
+JELLYFIN_SERVER_URL=https://jellyfin.example.com
 
 # Optional: enable the Discover page (kept server-side, never sent to the browser)
 TMDB_API_KEY=your_tmdb_v3_api_key
