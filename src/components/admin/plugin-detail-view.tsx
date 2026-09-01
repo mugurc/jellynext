@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import {
   ArrowLeft,
   Check,
@@ -47,6 +48,7 @@ export function PluginDetailView({ id }: { id: string }) {
   const [jsonErr, setJsonErr] = useState<Record<string, boolean>>({});
   const [syncedId, setSyncedId] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [confirmUninstall, setConfirmUninstall] = useState(false);
 
   if (config.data && syncedId !== id) {
     setSyncedId(id);
@@ -151,11 +153,7 @@ export function PluginDetailView({ id }: { id: string }) {
           {plugin?.CanUninstall && plugin.Id && (
             <button
               type="button"
-              onClick={() =>
-                uninstall.mutate(plugin.Id!, {
-                  onSuccess: () => router.push("/admin"),
-                })
-              }
+              onClick={() => setConfirmUninstall(true)}
               className="flex items-center gap-1.5 rounded-lg border border-border-strong px-3.5 py-2 text-[13px] font-bold text-danger-soft transition-colors hover:bg-danger-soft/10"
             >
               <Trash2 className="size-4" /> {t("uninstall")}
@@ -261,6 +259,21 @@ export function PluginDetailView({ id }: { id: string }) {
           </div>
         )}
       </Section>
+
+      {confirmUninstall && plugin?.Id && (
+        <ConfirmDialog
+          title={t("confirmUninstallTitle")}
+          body={t("confirmUninstallBody", { name: plugin.Name ?? "" })}
+          confirmLabel={t("uninstall")}
+          pending={uninstall.isPending}
+          onCancel={() => setConfirmUninstall(false)}
+          onConfirm={() =>
+            uninstall.mutate(plugin.Id!, {
+              onSuccess: () => router.push("/admin"),
+            })
+          }
+        />
+      )}
     </div>
   );
 }
@@ -299,6 +312,8 @@ function ToggleRow({
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={on}
       onClick={() => onChange(!on)}
       className="flex items-center justify-between gap-4 text-left"
     >

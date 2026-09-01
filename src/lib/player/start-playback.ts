@@ -79,6 +79,42 @@ async function seriesTarget(
   };
 }
 
+/**
+ * One season's episodes as a queue, starting at its first unwatched episode.
+ * NextUp is series-wide, so it cannot answer "where does THIS season resume".
+ */
+async function seasonTarget(
+  item: BaseItemDto,
+  userId: string,
+): Promise<PlaybackTarget | null> {
+  if (!item.SeriesId) return containerTarget(item, userId);
+  const eps = await jf
+    .get<BaseItemDtoQueryResult>(`/Shows/${item.SeriesId}/Episodes`, {
+      userId,
+      seasonId: item.Id,
+      fields: "UserData",
+    })
+    .catch(() => null);
+
+  // Same duplicate-file caveat as a series, keyed on the episode number alone
+  // since every episode here is already in the one season.
+  const seen = new Set<string>();
+  const unique = (eps?.Items ?? []).filter((e) => {
+    const key = String(e.IndexNumber ?? e.Id);
+    if (!e.Id || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const ids = unique.map((e) => e.Id).filter((id): id is string => Boolean(id));
+  if (!ids.length) return null;
+
+  const start = unique.find((e) => !e.UserData?.Played);
+  return {
+    itemId: start?.Id ?? ids[0],
+    queue: { ids, title: item.SeriesName ?? item.Name ?? "" },
+  };
+}
+
 /** A collection's or playlist's playable children as a queue, from the top. */
 async function containerTarget(
   item: BaseItemDto,
@@ -131,6 +167,7 @@ export async function resolvePlaybackTarget(
 ): Promise<PlaybackTarget | null> {
   if (!item.Id) return null;
   if (item.Type === "Series") return seriesTarget(item, userId, nextUpHint);
+  if (item.Type === "Season") return seasonTarget(item, userId);
   if (item.Type === "BoxSet" || item.Type === "Playlist")
     return containerTarget(item, userId);
   return { itemId: item.Id, queue: null };

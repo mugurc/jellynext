@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { Music2 } from "lucide-react";
 import { Carousel } from "@/components/media/carousel";
-import { Skeleton } from "@/components/media/skeletons";
+import { GridSkeleton } from "@/components/media/skeletons";
 import { AlbumCard, ArtistAvatar } from "./music-cards";
 import {
   useAlbums,
@@ -64,12 +64,15 @@ export function MusicView() {
       )}
 
       <h2 className="mb-4 text-xl font-bold tracking-tight">{t("albums")}</h2>
-      {albums.isLoading && !albumItems.length ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-5">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-square w-full rounded-xl" />
-          ))}
-        </div>
+      {/* `views.isLoading` too: until it resolves there is no parentId, the
+          albums query is DISABLED, and a disabled query reports isLoading=false
+          — so the page asserted "no albums here yet" on every cold load. */}
+      {(views.isLoading || albums.isLoading) && !albumItems.length ? (
+        <GridSkeleton
+          count={12}
+          variant="square"
+          className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-5"
+        />
       ) : albumItems.length ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-5">
           {albumItems.map((al) => (

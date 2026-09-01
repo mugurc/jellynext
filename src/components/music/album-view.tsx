@@ -3,15 +3,11 @@
 import { useTranslations } from "next-intl";
 import { Play, Shuffle } from "lucide-react";
 import type { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
-import { GridSkeleton } from "@/components/media/skeletons";
+import { ListSkeleton } from "@/components/media/skeletons";
 import { useAlbumTracks } from "@/lib/jellyfin/queries";
-import {
-  formatClock,
-  gradientFallback,
-  posterUrl,
-  ticksToSeconds,
-} from "@/lib/jellyfin/media";
+import { formatClock, posterUrl, ticksToSeconds } from "@/lib/jellyfin/media";
 import { usePlayer, type Track } from "@/lib/player/store";
+import { Art } from "@/components/common/art";
 
 export function AlbumView({ item }: { item: BaseItemDto }) {
   const t = useTranslations("Music");
@@ -41,13 +37,12 @@ export function AlbumView({ item }: { item: BaseItemDto }) {
   return (
     <div className="animate-jn-fade px-10 pt-9 pb-28">
       <div className="mb-9 flex flex-wrap gap-8">
-        <div
-          className="aspect-square w-[220px] flex-none rounded-2xl bg-cover bg-center shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
-          style={{
-            backgroundImage: cover
-              ? `url("${cover}"), ${gradientFallback(item.Id)}`
-              : gradientFallback(item.Id),
-          }}
+        <Art
+          src={cover}
+          seed={item.Id}
+          alt={item.Name ?? ""}
+          priority
+          className="aspect-square w-[220px] flex-none rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
         />
         <div className="flex min-w-[260px] flex-1 flex-col justify-end">
           <div className="mb-2 text-[12px] font-bold tracking-[0.08em] text-accent">
@@ -83,7 +78,10 @@ export function AlbumView({ item }: { item: BaseItemDto }) {
       </div>
 
       {isLoading ? (
-        <GridSkeleton count={6} />
+        <ListSkeleton
+          count={8}
+          rowClassName="flex items-center gap-4 px-3 py-3"
+        />
       ) : (
         <div className="flex flex-col">
           {tracks.map((tk, i) => (

@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import type { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
-import { backdropUrl, gradientFallback, posterUrl } from "@/lib/jellyfin/media";
+import { backdropUrl, posterUrl } from "@/lib/jellyfin/media";
 import {
   useCollectionItems,
   useDeleteItem,
@@ -31,7 +31,8 @@ import { useCurrentUser } from "@/lib/auth/current-user";
 import { usePlayQueue } from "@/lib/player/queue";
 import { Portal } from "@/components/common/portal";
 import { PlaylistShareModal } from "@/components/detail/playlist-share-modal";
-import { GridSkeleton } from "@/components/media/skeletons";
+import { ListSkeleton } from "@/components/media/skeletons";
+import { Art } from "@/components/common/art";
 
 const PLAYABLE = ["Movie", "Episode", "Video", "MusicVideo", "Audio"];
 
@@ -122,13 +123,11 @@ export function CollectionView({ item }: { item: BaseItemDto }) {
   return (
     <div className="animate-jn-fade">
       <section className="relative flex min-h-[340px] items-end overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: backdrop
-              ? `url("${backdrop}"), ${gradientFallback(item.Id)}`
-              : gradientFallback(item.Id),
-          }}
+        <Art
+          src={backdrop}
+          seed={item.Id}
+          priority
+          className="absolute inset-0"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-bg via-bg/60 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-bg to-transparent" />
@@ -237,7 +236,11 @@ export function CollectionView({ item }: { item: BaseItemDto }) {
 
       <div className="px-10 pt-8 pb-16">
         {query.isLoading ? (
-          <GridSkeleton count={6} />
+          <ListSkeleton
+            count={8}
+            thumb="aspect-[2/3] w-[52px] rounded-md"
+            className="flex flex-col divide-y divide-border"
+          />
         ) : items.length ? (
           <div className="flex flex-col divide-y divide-border">
             {items.map((entry, index) => (
@@ -367,14 +370,11 @@ function MemberRow({
       <button
         type="button"
         onClick={onOpen}
-        className="aspect-[2/3] w-[52px] flex-none rounded-md bg-cover bg-center"
-        style={{
-          backgroundImage: img
-            ? `url("${img}"), ${gradientFallback(entry.Id)}`
-            : gradientFallback(entry.Id),
-        }}
+        className="relative aspect-[2/3] w-[52px] flex-none overflow-hidden rounded-md"
         aria-label={entry.Name ?? ""}
-      />
+      >
+        <Art as="span" src={img} seed={entry.Id} className="absolute inset-0" />
+      </button>
       <button
         type="button"
         onClick={onOpen}

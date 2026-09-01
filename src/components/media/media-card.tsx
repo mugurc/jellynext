@@ -34,6 +34,9 @@ function metaLine(item: BaseItemDto): string {
     const code = s != null && e != null ? `S${s}·E${e}` : "";
     return [code, item.Name].filter(Boolean).join(" · ");
   }
+  // A season's caption carries the series name, so the line under it is where
+  // the season itself belongs — otherwise the tile reads as its own show.
+  if (item.Type === "Season") return item.Name ?? "";
   const year = item.ProductionYear ? String(item.ProductionYear) : "";
   const genre = item.Genres?.[0] ?? "";
   return [year, genre].filter(Boolean).join(" · ");
@@ -63,8 +66,12 @@ export function MediaCard({
     : posterUrl(item, { maxWidth: 360 });
   const rating = item.CommunityRating?.toFixed(1);
   const progress = showProgress ? resumePercent(item) : 0;
+  // Episodes and seasons are named for their place in a show ("Season 2"), not
+  // for themselves — the show is what the viewer is actually looking for.
   const displayTitle =
-    item.Type === "Episode" ? (item.SeriesName ?? item.Name) : item.Name;
+    item.Type === "Episode" || item.Type === "Season"
+      ? (item.SeriesName ?? item.Name)
+      : item.Name;
   // Only directly-playable types get the quick-play shortcut on hover.
   const playable =
     item.Type === "Movie" ||
@@ -98,7 +105,8 @@ export function MediaCard({
         )}
         style={{ backgroundImage: gradientFallback(item.Id) }}
       >
-        {/* Artwork and its wash share one wrapper, and only the wrapper fades.
+        {/* The one place that does not use <Art>. Artwork and its wash share one
+            wrapper, and only the wrapper fades.
             As separate children the fading one gets its own compositing layer,
             and the two rounded edges then disagree by a fraction of a pixel —
             which showed up as unwashed artwork bleeding at the bottom corners.

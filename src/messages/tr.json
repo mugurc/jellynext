@@ -86,6 +86,8 @@
   },
   "Prefs": {
     "title": "Tercihler",
+    "changeAvatar": "Profil fotoğrafını değiştir",
+    "removeAvatar": "Profil fotoğrafını kaldır",
     "general": "GENEL",
     "playback": "OYNATMA",
     "subtitles": "ALTYAZI VE SES",
@@ -115,7 +117,8 @@
     "quickConnectDesc": "TV'de veya başka bir cihazda mı giriş yapıyorsun? Gösterdiği kodu buraya gir, anında onayla — şifreye gerek yok.",
     "quickConnectAuthorize": "Onayla",
     "quickConnectDone": "Onaylandı",
-    "quickConnectError": "Kod geçersiz ya da süresi dolmuş."
+    "quickConnectError": "Kod geçersiz ya da süresi dolmuş.",
+    "avatarFailed": "Fotoğraf güncellenemedi"
   },
   "Admin": {
     "title": "Sunucu Panosu",
@@ -255,7 +258,26 @@
     "customCssDesc": "Tüm kullanıcılar için her sayfaya eklenir.",
     "splashscreen": "Açılış ekranı",
     "splashscreenDesc": "Uygulama yüklenirken açılış görseli göster.",
-    "saveFailed": "Kaydedilemedi"
+    "saveFailed": "Kaydedilemedi",
+    "confirmDeleteLibraryTitle": "Bu kütüphane silinsin mi?",
+    "confirmDeleteLibraryBody": "\"{name}\" sunucudan kaldırılacak. Diskteki medya dosyalarına dokunulmaz, ama kütüphane ve metadata'sı yeniden kurulmalı.",
+    "confirmDeleteUserTitle": "Bu kullanıcı silinsin mi?",
+    "confirmDeleteUserBody": "\"{name}\" izleme geçmişi, favorileri ve ayarlarıyla birlikte silinecek. Bu geri alınamaz.",
+    "confirmUninstallTitle": "Bu eklenti kaldırılsın mı?",
+    "confirmUninstallBody": "\"{name}\" yapılandırmasıyla birlikte kaldırılacak. Sunucunun yeniden başlatılması gerekebilir.",
+    "confirmRevokeTitle": "Bu anahtar iptal edilsin mi?",
+    "confirmRevokeBody": "\"{name}\" anahtarıyla bağlanan her şey anında çalışmayı bırakır. Anahtar geri getirilemez.",
+    "confirmRemovePathTitle": "Bu klasör kaldırılsın mı?",
+    "confirmRemovePathBody": "\"{path}\" artık taranmayacak ve kütüphane bu klasör olmadan yenilenecek.",
+    "confirmResetPasswordTitle": "Bu şifre sıfırlansın mı?",
+    "confirmResetPasswordBody": "\"{name}\" şifresiz kalacak ve yeni bir şifre belirlenene kadar şifresiz giriş yapabilecek.",
+    "confirmDeleteDeviceTitle": "Bu cihaz kaldırılsın mı?",
+    "confirmDeleteDeviceBody": "\"{name}\" oturumu kapatılacak ve cihaz listesinden çıkarılacak.",
+    "uninstall": "Kaldır",
+    "remove": "Kaldır",
+    "reset": "Sıfırla",
+    "noTasks": "Zamanlanmış görev yok.",
+    "up": "Yukarı"
   },
   "LibraryEdit": {
     "back": "Geri",
@@ -384,7 +406,7 @@
     "upcoming": "Yakında",
     "topRatedMovies": "En Yüksek Puanlı Filmler",
     "unavailableTitle": "Keşfet kullanılamıyor",
-    "unavailableHint": "Sunucuda TMDb API anahtarı yapılandırılmamış. Dünya çapında trend başlıkları görmek için .env dosyasına TMDB_API_KEY ekle."
+    "unavailableHint": "TMDb'ye ulaşılamadı. Anahtar reddedilmiş, istek sınırı aşılmış ya da servis kapalı olabilir."
   },
   "Library": {
     "all": "Tümü",
@@ -422,6 +444,8 @@
     "tabDetails": "Detaylar",
     "tabCast": "Oyuncular ve Sahneler",
     "season": "Sezon",
+    "typeSeries": "Dizi",
+    "typeMovie": "Film",
     "watchlist": "Favori",
     "trailer": "Fragman",
     "download": "İndir",
@@ -481,7 +505,12 @@
     "factRuntime": "Süre",
     "subtitleLangCount": "{count} altyazı dili",
     "showMore": "+{count} daha",
-    "showLess": "Daha az göster"
+    "showLess": "Daha az göster",
+    "confirmDeleteSubtitleTitle": "Bu altyazı silinsin mi?",
+    "confirmDeleteSubtitleBody": "\"{name}\" sunucudan silinecek. Tekrar indirmek için yeniden aramak gerekir.",
+    "viewOn": "{name} üzerinde gör",
+    "rtFresh": "Taze",
+    "rtRotten": "Çürük"
   },
   "ItemEdit": {
     "title": "Meta veriyi düzenle",
@@ -625,7 +654,13 @@
     "create": "Oluştur",
     "noParties": "Aktif parti yok",
     "syncNote": "Partideki herkes senkron kalır — birlikte oynat, duraklat ve ilerle.",
-    "seek": "Konum"
+    "seek": "Konum",
+    "back": "Geri",
+    "back10": "10 saniye geri",
+    "forward10": "10 saniye ileri",
+    "volume": "Ses",
+    "closePlayer": "Oynatıcıyı kapat",
+    "pause": "Duraklat"
   },
   "Notifications": {
     "title": "Bildirimler",
@@ -657,11 +692,17 @@
     "filter": "Filtreler",
     "loading": "Yükleniyor…",
     "retry": "Tekrar dene",
+    "close": "Kapat",
     "empty": "Burada henüz bir şey yok",
     "previous": "Önceki",
     "next": "Sonraki",
     "shuffle": "Karıştır",
     "repeat": "Tekrarla",
-    "repeatOne": "Tek parçayı tekrarla"
+    "repeatOne": "Tek parçayı tekrarla",
+    "cancel": "Vazgeç",
+    "loadFailed": "Bu içerik yüklenemedi."
+  },
+  "Media": {
+    "slide": "Slayt {n}"
   }
 }

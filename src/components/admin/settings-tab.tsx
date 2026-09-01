@@ -366,6 +366,7 @@ function TextRow({
   return (
     <RowShell label={label} desc={desc}>
       <input
+        aria-label={label}
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
@@ -389,6 +390,7 @@ function NumberRow({
   return (
     <RowShell label={label} desc={desc}>
       <input
+        aria-label={label}
         type="number"
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
@@ -416,6 +418,7 @@ function SelectRow({
   return (
     <RowShell label={label} desc={desc} last={last}>
       <select
+        aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-56 rounded-lg border border-border-strong bg-white/[0.04] px-3 py-2 text-[13px] outline-none focus:border-accent"
@@ -450,6 +453,7 @@ function TextareaRow({
         {desc && <div className="text-[12px] text-muted">{desc}</div>}
       </div>
       <textarea
+        aria-label={label}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={mono ? 5 : 2}
@@ -481,6 +485,9 @@ function ToggleRow({
         type="button"
         role="switch"
         aria-checked={on}
+        // The visible label lives in RowShell, outside this button, so without
+        // this every switch announced itself as just "switch, on".
+        aria-label={label}
         onClick={() => onChange(!on)}
         className={cn(
           "flex h-6 w-11 items-center rounded-full p-0.5 transition-colors",

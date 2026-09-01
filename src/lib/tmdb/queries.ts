@@ -47,9 +47,17 @@ interface TmdbListResponse {
   results?: TmdbItem[];
 }
 
-async function fetchTmdb<T>(path: string): Promise<T | null> {
+/**
+ * Throws on a failed response rather than returning null.
+ *
+ * Swallowing it made every HTTP failure — a rejected API key, a 429, the
+ * proxy's own 502 — look like a SUCCESSFUL request that happened to return no
+ * results, so `isError` never fired and Discover rendered its heading over a
+ * blank page with no explanation and no retry.
+ */
+async function fetchTmdb<T>(path: string): Promise<T> {
   const res = await fetch(`/api/tmdb/${path}`);
-  if (!res.ok) return null;
+  if (!res.ok) throw new Error(`tmdb ${res.status}`);
   return (await res.json()) as T;
 }
 
@@ -204,7 +212,10 @@ export function useTmdbImages(type: string, id: string | number | undefined) {
 }
 
 /** The library item matching a TMDb id, if the user owns it. */
-export function useLibraryMatch(tmdbId: string | number | undefined) {
+export function useLibraryMatch(
+  tmdbId: string | number | undefined,
+  type?: "movie" | "tv",
+) {
   const { userId } = useCurrentUser();
   return useQuery({
     queryKey: ["libraryTmdbIndex", userId],
@@ -217,14 +228,21 @@ export function useLibraryMatch(tmdbId: string | number | undefined) {
         fields: "ProviderIds",
         limit: 5000,
       });
+      // Keyed by KIND + id. TMDb numbers movies and series in two independent
+      // spaces, so id 1399 is a valid movie *and* a valid series — keyed by the
+      // number alone, a series page could offer "in your library" pointing at
+      // an unrelated film.
       const map: Record<string, BaseItemDto> = {};
       for (const item of res.Items ?? []) {
         const t = item.ProviderIds?.Tmdb;
-        if (t && !map[t]) map[t] = item;
+        if (!t) continue;
+        const key = `${item.Type === "Series" ? "tv" : "movie"}:${t}`;
+        if (!map[key]) map[key] = item;
       }
       return map;
     },
     staleTime: 30 * 60 * 1000,
-    select: (map) => (tmdbId != null ? map[String(tmdbId)] : undefined),
+    select: (map) =>
+      tmdbId != null && type ? map[`${type}:${tmdbId}`] : undefined,
   });
 }

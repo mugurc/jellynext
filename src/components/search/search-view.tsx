@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Clock, Search as SearchIcon, TrendingUp, X } from "lucide-react";
 import type { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
+import { Art } from "@/components/common/art";
 import { MediaCard } from "@/components/media/media-card";
 import { GridSkeleton } from "@/components/media/skeletons";
 import {
@@ -13,7 +14,7 @@ import {
   useSearchPeople,
 } from "@/lib/jellyfin/queries";
 import { useSearchHistory } from "@/lib/search/history";
-import { gradientFallback, posterUrl } from "@/lib/jellyfin/media";
+import { posterUrl } from "@/lib/jellyfin/media";
 import { cn } from "@/lib/utils";
 
 const TYPES = [
@@ -245,13 +246,12 @@ function PersonAvatar({ person }: { person: BaseItemDto }) {
       href={`/person/${person.Id}`}
       className="group flex w-24 flex-none flex-col items-center gap-2.5 text-center transition-transform hover:-translate-y-1"
     >
-      <span
-        className="size-24 rounded-full bg-cover bg-center ring-2 ring-transparent transition-[box-shadow] group-hover:ring-accent"
-        style={{
-          backgroundImage: img
-            ? `url("${img}"), ${gradientFallback(person.Id)}`
-            : gradientFallback(person.Id),
-        }}
+      <Art
+        as="span"
+        src={img}
+        seed={person.Id}
+        alt={person.Name ?? ""}
+        className="size-24 rounded-full ring-2 ring-transparent transition-[box-shadow] group-hover:ring-accent"
       />
       <span className="w-full truncate text-[12.5px] font-semibold text-bright">
         {person.Name}

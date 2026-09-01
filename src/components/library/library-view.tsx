@@ -16,7 +16,7 @@ import {
 import Link from "next/link";
 import type { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import { MediaCard } from "@/components/media/media-card";
-import { GridSkeleton } from "@/components/media/skeletons";
+import { GridSkeleton, ListSkeleton } from "@/components/media/skeletons";
 import { FilterDrawer } from "./filter-drawer";
 import {
   useDisplayPreferences,
@@ -27,11 +27,8 @@ import {
   useUpdateDisplayPreferences,
   useUserViews,
 } from "@/lib/jellyfin/queries";
-import {
-  formatRuntime,
-  gradientFallback,
-  posterUrl,
-} from "@/lib/jellyfin/media";
+import { formatRuntime, posterUrl } from "@/lib/jellyfin/media";
+import { Art } from "@/components/common/art";
 import { cn } from "@/lib/utils";
 
 const SORTS = [
@@ -480,8 +477,21 @@ export function LibraryView({
         ))}
       </div>
 
-      {query.isLoading && !items.length ? (
-        <GridSkeleton />
+      {/* `views.isLoading` too: while it runs the items query is DISABLED, and
+          a disabled query reports isLoading=false (it is `isPending &&
+          isFetching`). Without this the page claimed "nothing matches your
+          filters" for the whole /UserViews round trip. */}
+      {(views.isLoading || query.isLoading) && !items.length ? (
+        // The two view modes are different shapes; one skeleton cannot serve both.
+        view === "grid" ? (
+          <GridSkeleton />
+        ) : (
+          <ListSkeleton
+            count={8}
+            thumb="aspect-[2/3] w-[52px] rounded-md"
+            className="flex flex-col divide-y divide-border"
+          />
+        )
       ) : items.length ? (
         <>
           {view === "grid" ? (
@@ -571,13 +581,10 @@ function ListRow({ item }: { item: BaseItemDto }) {
       href={`/item/${item.Id}`}
       className="group flex items-center gap-4 py-3 transition-colors hover:bg-white/[0.03]"
     >
-      <div
-        className="aspect-[2/3] w-[52px] flex-none rounded-md bg-cover bg-center"
-        style={{
-          backgroundImage: img
-            ? `url("${img}"), ${gradientFallback(item.Id)}`
-            : gradientFallback(item.Id),
-        }}
+      <Art
+        src={img}
+        seed={item.Id}
+        className="aspect-[2/3] w-[52px] flex-none rounded-md"
       />
       <div className="min-w-0 flex-1">
         <div className="truncate text-[15px] font-bold group-hover:text-accent">

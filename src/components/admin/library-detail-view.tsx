@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { Skeleton } from "@/components/media/skeletons";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -41,6 +43,9 @@ export function LibraryDetailView({ name }: { name: string }) {
   const [syncedName, setSyncedName] = useState(name);
   const [addOpen, setAddOpen] = useState(false);
   const [path, setPath] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  /** The media folder awaiting confirmation, if any. */
+  const [confirmPath, setConfirmPath] = useState<string | null>(null);
 
   if (syncedName !== name) {
     setSyncedName(name);
@@ -50,8 +55,8 @@ export function LibraryDetailView({ name }: { name: string }) {
   if (isLoading) {
     return (
       <div className="px-10 pt-8 pb-16">
-        <div className="h-8 w-48 animate-pulse rounded bg-card/60" />
-        <div className="mt-6 h-48 animate-pulse rounded-2xl bg-card/40" />
+        <Skeleton className="h-8 w-48 rounded" />
+        <Skeleton className="mt-6 h-48 rounded-2xl" />
       </div>
     );
   }
@@ -108,10 +113,7 @@ export function LibraryDetailView({ name }: { name: string }) {
           </button>
           <button
             type="button"
-            onClick={() =>
-              lib.Name &&
-              del.mutate(lib.Name, { onSuccess: () => router.push("/admin") })
-            }
+            onClick={() => setConfirmDelete(true)}
             className="flex items-center gap-1.5 rounded-lg border border-border-strong px-3.5 py-2 text-[13px] font-bold text-danger-soft transition-colors hover:bg-danger-soft/10"
           >
             <Trash2 className="size-4" /> {t("delete")}
@@ -172,9 +174,7 @@ export function LibraryDetailView({ name }: { name: string }) {
                 </span>
                 <button
                   type="button"
-                  onClick={() =>
-                    lib.Name && removePath.mutate({ name: lib.Name, path: p })
-                  }
+                  onClick={() => setConfirmPath(p)}
                   disabled={removePath.isPending}
                   aria-label={t("remove")}
                   className="flex size-7 flex-none items-center justify-center rounded-md text-dim transition-colors hover:bg-danger-soft/15 hover:text-danger-soft disabled:opacity-50"
@@ -240,6 +240,37 @@ export function LibraryDetailView({ name }: { name: string }) {
           )}
         </Section>
       </div>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title={t("confirmDeleteLibraryTitle")}
+          body={t("confirmDeleteLibraryBody", { name: lib.Name ?? "" })}
+          confirmLabel={t("delete")}
+          pending={del.isPending}
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={() =>
+            lib.Name &&
+            del.mutate(lib.Name, { onSuccess: () => router.push("/admin") })
+          }
+        />
+      )}
+
+      {confirmPath && (
+        <ConfirmDialog
+          title={t("confirmRemovePathTitle")}
+          body={t("confirmRemovePathBody", { path: confirmPath })}
+          confirmLabel={t("remove")}
+          pending={removePath.isPending}
+          onCancel={() => setConfirmPath(null)}
+          onConfirm={() => {
+            if (lib.Name)
+              removePath.mutate(
+                { name: lib.Name, path: confirmPath },
+                { onSettled: () => setConfirmPath(null) },
+              );
+          }}
+        />
+      )}
     </div>
   );
 }

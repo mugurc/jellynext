@@ -55,7 +55,7 @@ export function FolderPicker({
           type="button"
           onClick={() => onChange(parentPath(path))}
           disabled={path === "/"}
-          aria-label="Up"
+          aria-label={t("up")}
           className="flex size-7 flex-none items-center justify-center rounded-md text-muted transition-colors hover:bg-white/[0.06] hover:text-text disabled:opacity-40"
         >
           <ArrowUp className="size-4" />

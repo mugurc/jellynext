@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Check, ListPlus, Plus, X } from "lucide-react";
 import type { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import { Portal } from "@/components/common/portal";
+import { ListSkeleton } from "@/components/media/skeletons";
 import {
   useAddToCollection,
   useAddToPlaylist,
@@ -20,6 +21,7 @@ export function AddToListModal({
   item: BaseItemDto;
   onClose: () => void;
 }) {
+  const tc = useTranslations("Common");
   const t = useTranslations("AddToList");
   const collections = useCollectionsList();
   const playlists = usePlaylistsList();
@@ -62,7 +64,7 @@ export function AddToListModal({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={tc("close")}
               className="flex size-8 items-center justify-center rounded-lg text-muted hover:bg-white/[0.06] hover:text-text"
             >
               <X className="size-5" />
@@ -73,6 +75,7 @@ export function AddToListModal({
             <ListSection
               title={t("collections")}
               emptyLabel={t("noCollections")}
+              loading={collections.isLoading}
               items={collections.data?.Items ?? []}
               onAdd={(cid) =>
                 addCol.mutate(
@@ -88,8 +91,12 @@ export function AddToListModal({
                 addCol.mutate(
                   { name: newCol.trim(), itemId: id },
                   {
-                    onSuccess: () => {
-                      mark(`c:new:${newCol.trim()}`);
+                    onSuccess: (created) => {
+                      // Mark by the id the server assigned. Marking by name
+                      // wrote a key (`c:new:<name>`) that `isDone` — which only
+                      // ever asks `c:<id>` — could never match, so a list the
+                      // user had just created came back offering "+" again.
+                      if (created?.Id) mark(`c:${created.Id}`);
                       setNewCol("");
                     },
                   },
@@ -101,6 +108,7 @@ export function AddToListModal({
             <ListSection
               title={t("playlists")}
               emptyLabel={t("noPlaylists")}
+              loading={playlists.isLoading}
               items={playlists.data?.Items ?? []}
               onAdd={(pid) =>
                 addPl.mutate(
@@ -116,8 +124,8 @@ export function AddToListModal({
                 addPl.mutate(
                   { name: newPl.trim(), itemId: id },
                   {
-                    onSuccess: () => {
-                      mark(`p:new:${newPl.trim()}`);
+                    onSuccess: (created) => {
+                      if (created?.Id) mark(`p:${created.Id}`);
                       setNewPl("");
                     },
                   },
@@ -136,6 +144,7 @@ export function AddToListModal({
 function ListSection({
   title,
   emptyLabel,
+  loading,
   items,
   onAdd,
   isDone,
@@ -147,6 +156,7 @@ function ListSection({
 }: {
   title: string;
   emptyLabel: string;
+  loading: boolean;
   items: BaseItemDto[];
   onAdd: (id: string) => void;
   isDone: (id: string) => boolean;
@@ -162,7 +172,11 @@ function ListSection({
         {title}
       </h4>
       <div className="flex flex-col gap-1">
-        {items.length ? (
+        {loading ? (
+          // Without this the modal asserted "no collections yet" for the whole
+          // round trip, every time it opened.
+          <ListSkeleton count={3} lines={1} rowClassName="px-3 py-2" />
+        ) : items.length ? (
           items.map((it) => {
             const added = isDone(it.Id ?? "");
             return (

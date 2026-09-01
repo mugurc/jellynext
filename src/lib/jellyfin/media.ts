@@ -68,7 +68,16 @@ export function posterUrl(
   return null;
 }
 
-/** Best wide/landscape artwork (Thumb → Backdrop → parent), for 16:9 cards. */
+/**
+ * Best wide/landscape artwork for a 16:9 card: the item's own Thumb, then its
+ * Backdrop, then anything inherited from its parent.
+ *
+ * With one exception. Jellyfin stores an episode's still frame as its PRIMARY
+ * image — episodes essentially never carry a Thumb or a Backdrop of their own.
+ * Checked in the plain order, every episode therefore skipped straight to the
+ * inherited series artwork, and a season's episode list showed the same picture
+ * on every single row. So for an episode its own Primary outranks the parent's.
+ */
 export function thumbUrl(
   item: BaseItemDto,
   opts: SizeOpts = {},
@@ -82,6 +91,12 @@ export function thumbUrl(
   if (item.BackdropImageTags?.length) {
     return itemImageUrl(item.Id!, "Backdrop", {
       tag: item.BackdropImageTags[0],
+      ...opts,
+    });
+  }
+  if (item.Type === "Episode" && item.ImageTags?.Primary) {
+    return itemImageUrl(item.Id!, "Primary", {
+      tag: item.ImageTags.Primary,
       ...opts,
     });
   }

@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { Skeleton } from "@/components/media/skeletons";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -104,6 +106,8 @@ export function UserDetailView({ userId }: { userId: string }) {
   const [saved, setSaved] = useState(false);
   const [failed, setFailed] = useState(false);
   const [newPw, setNewPw] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   // Adopt the loaded user into an editable draft (once per user id).
   if (user?.Id && syncedId !== user.Id) {
@@ -118,8 +122,8 @@ export function UserDetailView({ userId }: { userId: string }) {
   if (isLoading || !draft || !user) {
     return (
       <div className="px-10 pt-8 pb-16">
-        <div className="h-8 w-48 animate-pulse rounded bg-card/60" />
-        <div className="mt-6 h-64 animate-pulse rounded-2xl bg-card/40" />
+        <Skeleton className="h-8 w-48 rounded" />
+        <Skeleton className="mt-6 h-64 rounded-2xl" />
       </div>
     );
   }
@@ -216,9 +220,7 @@ export function UserDetailView({ userId }: { userId: string }) {
           {!isSelf && (
             <button
               type="button"
-              onClick={() =>
-                del.mutate(userId, { onSuccess: () => router.push("/admin") })
-              }
+              onClick={() => setConfirmDelete(true)}
               className="flex items-center gap-1.5 rounded-lg border border-border-strong px-3.5 py-2 text-[13px] font-bold text-danger-soft transition-colors hover:bg-danger-soft/10"
             >
               <Trash2 className="size-4" /> {t("delete")}
@@ -281,7 +283,7 @@ export function UserDetailView({ userId }: { userId: string }) {
             </button>
             <button
               type="button"
-              onClick={() => password.mutate({ id: userId, reset: true })}
+              onClick={() => setConfirmReset(true)}
               disabled={password.isPending}
               className="flex h-11 items-center gap-1.5 rounded-[10px] border border-border-strong px-4 text-[13px] font-bold text-bright transition-colors hover:bg-white/[0.06] disabled:opacity-50"
             >
@@ -398,6 +400,35 @@ export function UserDetailView({ userId }: { userId: string }) {
           </div>
         </Section>
       </div>
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title={t("confirmDeleteUserTitle")}
+          body={t("confirmDeleteUserBody", { name: user.Name ?? "" })}
+          confirmLabel={t("delete")}
+          pending={del.isPending}
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={() =>
+            del.mutate(userId, { onSuccess: () => router.push("/admin") })
+          }
+        />
+      )}
+
+      {confirmReset && (
+        <ConfirmDialog
+          title={t("confirmResetPasswordTitle")}
+          body={t("confirmResetPasswordBody", { name: user.Name ?? "" })}
+          confirmLabel={t("reset")}
+          pending={password.isPending}
+          onCancel={() => setConfirmReset(false)}
+          onConfirm={() =>
+            password.mutate(
+              { id: userId, reset: true },
+              { onSettled: () => setConfirmReset(false) },
+            )
+          }
+        />
+      )}
     </div>
   );
 }
@@ -427,6 +458,8 @@ function ToggleRow({
   return (
     <button
       type="button"
+      role="switch"
+      aria-checked={on}
       onClick={() => onChange(!on)}
       className="flex items-center justify-between gap-4 py-2.5 text-left"
     >

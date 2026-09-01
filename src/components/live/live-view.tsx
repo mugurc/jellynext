@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Play, Radio, Tv } from "lucide-react";
 import type { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
-import { GridSkeleton } from "@/components/media/skeletons";
+import { ListSkeleton } from "@/components/media/skeletons";
+import { QueryState } from "@/components/common/query-state";
 import { useLiveChannels, useLiveRecordings } from "@/lib/jellyfin/queries";
 import { gradientFallback, posterUrl, thumbUrl } from "@/lib/jellyfin/media";
 import { cn } from "@/lib/utils";
+import { Art } from "@/components/common/art";
 
 type Tab = "channels" | "guide" | "recordings";
 const TABS: Tab[] = ["channels", "guide", "recordings"];
@@ -51,16 +53,23 @@ function ChannelLogo({
   const img = posterUrl(channel, { maxWidth: 120 });
   return (
     <span
-      className="flex flex-none items-center justify-center rounded-lg bg-cover bg-center text-[13px] font-extrabold text-white"
+      className="relative flex flex-none items-center justify-center overflow-hidden rounded-lg bg-cover bg-center text-[13px] font-extrabold text-white"
       style={{
         width: size,
         height: size,
-        backgroundImage: img
-          ? `url("${img}"), ${gradientFallback(channel.Id)}`
-          : gradientFallback(channel.Id),
+        backgroundImage: gradientFallback(channel.Id),
       }}
     >
-      {!img && channelCode(channel.Name)}
+      {img ? (
+        <Art
+          as="span"
+          src={img}
+          seed={channel.Id}
+          className="absolute inset-0"
+        />
+      ) : (
+        channelCode(channel.Name)
+      )}
     </span>
   );
 }
@@ -80,8 +89,18 @@ export function LiveView() {
   const loading =
     tab === "recordings" ? recordingsQuery.isLoading : channelsQuery.isLoading;
 
+  const failed =
+    tab === "recordings" ? recordingsQuery.isError : channelsQuery.isError;
+  const retry = () =>
+    tab === "recordings" ? recordingsQuery.refetch() : channelsQuery.refetch();
+
+  // A failed request is NOT "Live TV isn't set up": a 403 (no EnableLiveTvAccess)
+  // or a 500 used to render as a confident statement about the server's setup.
   const noChannels =
-    !channelsQuery.isLoading && channels.length === 0 && tab !== "recordings";
+    !channelsQuery.isLoading &&
+    !channelsQuery.isError &&
+    channels.length === 0 &&
+    tab !== "recordings";
 
   function watch(id?: string | null) {
     if (id) router.push(`/watch/${id}`);
@@ -111,7 +130,32 @@ export function LiveView() {
       </div>
 
       {loading ? (
-        <GridSkeleton count={8} />
+        // All three tabs are rows of one kind or another, never a poster grid.
+        tab === "recordings" ? (
+          <ListSkeleton
+            count={6}
+            thumb="aspect-video w-[120px] rounded-lg"
+            rowClassName="flex items-center gap-4 rounded-xl border border-border bg-card/60 p-3.5"
+            className="flex flex-col gap-2.5"
+          />
+        ) : tab === "guide" ? (
+          <ListSkeleton
+            count={8}
+            thumb="size-[46px] rounded-lg"
+            rowClassName="flex items-center gap-4 p-3.5"
+            className="overflow-hidden rounded-2xl border border-border bg-surface"
+          />
+        ) : (
+          <ListSkeleton
+            count={8}
+            thumb="size-[52px] rounded-lg"
+            lines={3}
+            rowClassName="flex items-center gap-3.5 rounded-xl border border-border bg-card/60 p-3.5"
+            className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-4"
+          />
+        )
+      ) : failed ? (
+        <QueryState isError emptyText="" onRetry={retry} />
       ) : tab === "recordings" ? (
         recordings.length ? (
           <div className="flex flex-col gap-2.5">
@@ -230,16 +274,13 @@ function RecordingRow({
   const img = thumbUrl(rec, { maxWidth: 240 });
   return (
     <div className="flex items-center gap-4 rounded-xl border border-border bg-card/60 p-3.5">
-      <div
-        className="relative aspect-video w-[120px] flex-none overflow-hidden rounded-lg bg-cover bg-center"
-        style={{
-          backgroundImage: img
-            ? `url("${img}"), ${gradientFallback(rec.Id)}`
-            : gradientFallback(rec.Id),
-        }}
+      <Art
+        src={img}
+        seed={rec.Id}
+        className="aspect-video w-[120px] flex-none rounded-lg"
       >
         <span className="absolute top-1.5 left-1.5 size-2.5 rounded-full bg-danger-soft" />
-      </div>
+      </Art>
       <div className="min-w-0 flex-1">
         <div className="truncate text-[14.5px] font-bold">{rec.Name}</div>
         <div className="truncate text-[12px] text-muted">

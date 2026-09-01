@@ -269,16 +269,17 @@ export function CardActions({
                 setListOpen(true);
               }}
             />
-            {item.Type === "Episode" && item.SeriesId && (
-              <MenuItem
-                icon={<Tv className="size-4" />}
-                label={t("goToSeries")}
-                onClick={() => {
-                  close();
-                  router.push(`/item/${item.SeriesId}`);
-                }}
-              />
-            )}
+            {(item.Type === "Episode" || item.Type === "Season") &&
+              item.SeriesId && (
+                <MenuItem
+                  icon={<Tv className="size-4" />}
+                  label={t("goToSeries")}
+                  onClick={() => {
+                    close();
+                    router.push(`/item/${item.SeriesId}`);
+                  }}
+                />
+              )}
           </div>
         </Portal>
       )}

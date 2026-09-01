@@ -45,7 +45,11 @@ import {
 import { MediaCard } from "@/components/media/media-card";
 import { MenuItem } from "@/components/common/menu";
 import { FadeImg } from "@/components/common/fade-img";
-import { GridSkeleton } from "@/components/media/skeletons";
+import {
+  GridSkeleton,
+  ListSkeleton,
+  Skeleton,
+} from "@/components/media/skeletons";
 import { useCurrentUser } from "@/lib/auth/current-user";
 import { jf } from "@/lib/jellyfin/browser";
 import { useAdjacentEpisodes } from "@/lib/jellyfin/player-queries";
@@ -66,6 +70,7 @@ import { TrailerModal } from "./trailer-modal";
 import { ItemEditModal } from "./item-edit-modal";
 import { AddToListModal } from "./add-to-list-modal";
 import { IdentifyModal } from "./identify-modal";
+import { Art } from "@/components/common/art";
 import { AlbumView } from "@/components/music/album-view";
 import { ArtistView } from "@/components/music/artist-view";
 import { CollectionView } from "./collection-view";
@@ -91,12 +96,13 @@ export function DetailView({ itemId }: { itemId: string }) {
   );
   const nextEp = nextUp.data?.Items?.[0];
   const isSeries = item?.Type === "Series";
+  const isSeason = item?.Type === "Season";
   const isEpisode = item?.Type === "Episode";
   const episodeSiblings = useAdjacentEpisodes(
     item?.Type === "Episode" ? (item?.SeriesId ?? undefined) : undefined,
     item?.Type === "Episode" ? itemId : undefined,
   );
-  const [tab, setTab] = useState<TabKey>("details");
+  const [tab, setTab] = useState<TabKey | null>(null);
   const [trailerOpen, setTrailerOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [addListOpen, setAddListOpen] = useState(false);
@@ -118,9 +124,24 @@ export function DetailView({ itemId }: { itemId: string }) {
   if (isLoading || !item) {
     return (
       <div>
-        <div className="h-[540px] animate-pulse bg-card/40" />
-        <div className="px-10 py-8">
-          <GridSkeleton count={6} />
+        <Skeleton className="h-[540px] rounded-none" />
+        <div className="px-10 pb-16">
+          {/* The tab bar, then rows. Whichever type this turns out to be, its
+              opening tab is a list — episodes for a series, facts for a movie —
+              never the poster grid that used to stand here. */}
+          <div className="mb-7 flex gap-1.5 border-b border-border">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="mx-4 my-3 h-[18px] w-16 rounded" />
+            ))}
+          </div>
+          <ListSkeleton
+            count={5}
+            leading="size-6"
+            thumb="aspect-video w-[172px] rounded-token"
+            lines={3}
+            rowClassName="flex items-center gap-[18px] p-3.5"
+            className="flex flex-col gap-2"
+          />
         </div>
       </div>
     );
@@ -135,19 +156,35 @@ export function DetailView({ itemId }: { itemId: string }) {
   // Episodes keep a text title (the episode name); movies/series show their
   // own title logo when they have one.
   const logo = isEpisode ? null : logoUrl(item, { maxHeight: 220 });
-  const resume = resumePercent(item);
+  // A series folder is never itself resumable — Play opens its next unwatched
+  // episode, so the label has to describe that episode instead.
+  const resume = resumePercent(isSeries && nextEp ? nextEp : item);
   const trailerUrl = item.RemoteTrailers?.[0]?.Url;
   // Which library a genre/studio chip should filter within.
   const libraryBase =
-    item.Type === "Series" || item.Type === "Episode" ? "/tv" : "/movies";
+    item.Type === "Series" || item.Type === "Season" || item.Type === "Episode"
+      ? "/tv"
+      : "/movies";
   const filterHref = (key: string, value: string) =>
     `${libraryBase}?${key}=${encodeURIComponent(value)}`;
+  // What kind of thing this page shows. Falls back to the raw Jellyfin type
+  // rather than mislabelling anything there is no translation for.
+  const typeLabel = isSeries
+    ? t("typeSeries")
+    : item.Type === "Movie"
+      ? t("typeMovie")
+      : (item.Type ?? "");
   const tabs: TabKey[] = isSeries
     ? ["episodes", "related", "details", "cast"]
-    : isEpisode
-      ? ["details", "cast"]
-      : ["related", "details", "cast"];
-  const activeTab = tabs.includes(tab) ? tab : tabs[0];
+    : isSeason
+      ? ["episodes", "details", "cast"]
+      : isEpisode
+        ? ["details", "cast"]
+        : ["related", "details", "cast"];
+  // The episode list is what a series or season page is *for*, so it leads
+  // rather than opening behind Details the way a single title does.
+  const defaultTab: TabKey = isSeries || isSeason ? "episodes" : "details";
+  const activeTab = tab && tabs.includes(tab) ? tab : defaultTab;
   const tabLabel: Record<TabKey, string> = {
     episodes: t("tabEpisodes"),
     related: t("tabRelated"),
@@ -166,7 +203,13 @@ export function DetailView({ itemId }: { itemId: string }) {
    */
   function warmPlayback() {
     void getMediaCredentials();
-    if (!item?.Id || item.Type === "Series" || item.Type === "BoxSet") return;
+    if (
+      !item?.Id ||
+      item.Type === "Series" ||
+      item.Type === "Season" ||
+      item.Type === "BoxSet"
+    )
+      return;
     const sel = initialSelection(item, usePrefs.getState());
     prefetchPlaybackInfo(item.Id, selectionToParams(userId, sel));
   }
@@ -245,7 +288,7 @@ export function DetailView({ itemId }: { itemId: string }) {
         <div className="relative flex w-full flex-col gap-6 px-10 pb-11 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
           <div className="max-w-[680px]">
             <div className="mb-3.5 text-[12.5px] font-semibold text-muted">
-              {isEpisode ? (
+              {isEpisode || isSeason ? (
                 <span className="flex flex-wrap items-center gap-1.5">
                   {item.SeriesId ? (
                     <Link
@@ -259,17 +302,21 @@ export function DetailView({ itemId }: { itemId: string }) {
                       {item.SeriesName}
                     </span>
                   )}
-                  {item.ParentIndexNumber != null &&
-                    item.IndexNumber != null && (
-                      <span>
-                        · S{item.ParentIndexNumber} · E{item.IndexNumber}
-                      </span>
-                    )}
+                  {isEpisode
+                    ? item.ParentIndexNumber != null &&
+                      item.IndexNumber != null && (
+                        <span>
+                          · S{item.ParentIndexNumber} · E{item.IndexNumber}
+                        </span>
+                      )
+                    : item.IndexNumber != null && (
+                        <span>
+                          · {t("season")} {item.IndexNumber}
+                        </span>
+                      )}
                 </span>
-              ) : isSeries ? (
-                "Series"
               ) : (
-                "Movie"
+                typeLabel
               )}
             </div>
             {logo ? (
@@ -291,8 +338,10 @@ export function DetailView({ itemId }: { itemId: string }) {
             )}
             <div className="mb-3.5 flex flex-wrap items-center gap-3.5 text-[13.5px] font-semibold text-bright">
               <RatingBadges item={item} />
-              {item.ProductionYear && <span>{item.ProductionYear}</span>}
-              {item.RunTimeTicks && (
+              {/* `!!` matters: a bare `0 && <span/>` renders the NUMBER 0 into
+                  the page, and a series folder's RunTimeTicks is often 0. */}
+              {!!item.ProductionYear && <span>{item.ProductionYear}</span>}
+              {!!item.RunTimeTicks && (
                 <span>{formatRuntime(item.RunTimeTicks)}</span>
               )}
               {item.OfficialRating && (
@@ -354,7 +403,7 @@ export function DetailView({ itemId }: { itemId: string }) {
                       router.push(`/item/${episodeSiblings.data.previous.Id}`)
                     }
                     disabled={!episodeSiblings.data?.previous}
-                    className="flex items-center gap-1.5 rounded-lg border border-bright/40 bg-white/[0.08] px-3 py-2 text-[12.5px] font-bold text-white transition-colors hover:border-white disabled:opacity-35 disabled:hover:border-bright/40"
+                    className="flex items-center gap-1.5 rounded-lg border-[1.5px] border-bright/40 bg-white/[0.12] px-3 py-2 text-[12.5px] font-bold text-white transition hover:border-white disabled:opacity-35 disabled:hover:border-bright/40"
                   >
                     <ChevronLeft className="size-4" />
                     {t("prevEpisode")}
@@ -366,7 +415,7 @@ export function DetailView({ itemId }: { itemId: string }) {
                       router.push(`/item/${episodeSiblings.data.next.Id}`)
                     }
                     disabled={!episodeSiblings.data?.next}
-                    className="flex items-center gap-1.5 rounded-lg border border-bright/40 bg-white/[0.08] px-3 py-2 text-[12.5px] font-bold text-white transition-colors hover:border-white disabled:opacity-35 disabled:hover:border-bright/40"
+                    className="flex items-center gap-1.5 rounded-lg border-[1.5px] border-bright/40 bg-white/[0.12] px-3 py-2 text-[12.5px] font-bold text-white transition hover:border-white disabled:opacity-35 disabled:hover:border-bright/40"
                   >
                     {t("nextEpisode")}
                     <ChevronRight className="size-4" />
@@ -381,6 +430,19 @@ export function DetailView({ itemId }: { itemId: string }) {
                   )}
                 </div>
               )}
+            {isSeries && nextEp && (
+              <button
+                type="button"
+                onClick={() => nextEp.Id && router.push(`/watch/${nextEp.Id}`)}
+                className="mb-5 flex items-center gap-1.5 text-[13px] text-muted transition-colors hover:text-bright"
+              >
+                {t("nextUp")}:
+                <span className="font-semibold text-bright">
+                  S{nextEp.ParentIndexNumber}·E{nextEp.IndexNumber} —{" "}
+                  {nextEp.Name}
+                </span>
+              </button>
+            )}
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
@@ -450,20 +512,6 @@ export function DetailView({ itemId }: { itemId: string }) {
                 <Check className="size-5" />
               </button>
             </div>
-
-            {isSeries && nextEp && (
-              <button
-                type="button"
-                onClick={() => nextEp.Id && router.push(`/watch/${nextEp.Id}`)}
-                className="mt-3.5 flex items-center gap-1.5 text-[13px] text-muted transition-colors hover:text-bright"
-              >
-                {t("nextUp")}:
-                <span className="font-semibold text-bright">
-                  S{nextEp.ParentIndexNumber}·E{nextEp.IndexNumber} —{" "}
-                  {nextEp.Name}
-                </span>
-              </button>
-            )}
           </div>
 
           {(isEpisode || item.Type === "Movie") && (
@@ -492,9 +540,13 @@ export function DetailView({ itemId }: { itemId: string }) {
           ))}
         </div>
 
-        {activeTab === "episodes" && item.Id && (
-          <EpisodesTab seriesId={item.Id} />
-        )}
+        {activeTab === "episodes" &&
+          (isSeason
+            ? item.SeriesId &&
+              item.Id && (
+                <EpisodesTab seriesId={item.SeriesId} seasonId={item.Id} />
+              )
+            : item.Id && <EpisodesTab seriesId={item.Id} />)}
         {activeTab === "related" && <RelatedTab itemId={itemId} />}
         {activeTab === "details" && <DetailsTab item={item} />}
         {activeTab === "cast" && <CastScenesTab item={item} />}
@@ -553,7 +605,13 @@ export function DetailView({ itemId }: { itemId: string }) {
 function RelatedTab({ itemId }: { itemId: string }) {
   const t = useTranslations("Detail");
   const { data, isLoading } = useSimilarItems(itemId, 18);
-  if (isLoading) return <GridSkeleton count={6} />;
+  if (isLoading)
+    return (
+      <GridSkeleton
+        count={6}
+        className="grid grid-cols-[repeat(auto-fill,minmax(176px,1fr))] gap-[18px]"
+      />
+    );
   const items = data?.Items ?? [];
   if (!items.length)
     return <p className="py-10 text-center text-muted">{t("noRelated")}</p>;
@@ -592,25 +650,24 @@ function CastScenesTab({ item }: { item: BaseItemDto }) {
                   href={`/watch/${f.Id}`}
                   className="group w-[240px] flex-none"
                 >
-                  <div
-                    className="relative mb-2 aspect-video overflow-hidden rounded-lg bg-card bg-cover bg-center"
-                    style={{
-                      backgroundImage: img
-                        ? `url("${img}"), ${gradientFallback(f.Id)}`
-                        : gradientFallback(f.Id),
-                    }}
+                  <Art
+                    src={img}
+                    seed={f.Id}
+                    className="mb-2 aspect-video rounded-lg bg-card"
                   >
                     <div className="absolute inset-0 flex items-center justify-center bg-scrim/20 opacity-0 transition-opacity group-hover:opacity-100">
                       <span className="flex size-10 items-center justify-center rounded-full bg-white/90 text-on-accent">
                         <Play className="size-4 fill-current" />
                       </span>
                     </div>
-                    {f.RunTimeTicks && (
+                    {/* Guarded on the formatted string, not the ticks: an empty
+                        one would still paint a bare pill in the corner. */}
+                    {formatRuntime(f.RunTimeTicks) && (
                       <span className="absolute right-1.5 bottom-1.5 rounded bg-scrim/75 px-1.5 py-0.5 text-[10.5px] font-bold">
                         {formatRuntime(f.RunTimeTicks)}
                       </span>
                     )}
-                  </div>
+                  </Art>
                   <div className="truncate text-[13px] font-semibold text-bright">
                     {f.Name}
                   </div>
@@ -636,14 +693,12 @@ function CastScenesTab({ item }: { item: BaseItemDto }) {
               href={`/person/${p.Id}`}
               className="flex items-center gap-3 rounded-xl bg-white/[0.03] p-2.5 transition-colors hover:bg-white/[0.06]"
             >
-              <span
-                className="size-12 flex-none rounded-full bg-cover bg-center"
-                style={{
-                  backgroundImage:
-                    p.PrimaryImageTag && img
-                      ? `url("${img}")`
-                      : gradientFallback(p.Id),
-                }}
+              <Art
+                as="span"
+                src={p.PrimaryImageTag ? img : null}
+                seed={p.Id}
+                alt={p.Name ?? ""}
+                className="size-12 flex-none rounded-full"
               />
               <div className="min-w-0">
                 <div className="truncate text-[13.5px] font-bold">{p.Name}</div>
@@ -671,19 +726,15 @@ function CastScenesTab({ item }: { item: BaseItemDto }) {
                 : null;
               return (
                 <div key={i} className="w-[210px] flex-none">
-                  <div
-                    className="relative mb-2 aspect-video overflow-hidden rounded-lg bg-card bg-cover bg-center"
-                    style={{
-                      backgroundImage:
-                        ch.ImageTag && img
-                          ? `url("${img}")`
-                          : gradientFallback(`${item.Id}-${i}`),
-                    }}
+                  <Art
+                    src={ch.ImageTag ? img : null}
+                    seed={`${item.Id}-${i}`}
+                    className="mb-2 aspect-video rounded-lg bg-card"
                   >
                     <span className="absolute bottom-2 left-2 rounded bg-scrim/80 px-1.5 py-0.5 text-[11px] font-bold text-accent">
                       {formatClock(ticksToSeconds(ch.StartPositionTicks))}
                     </span>
-                  </div>
+                  </Art>
                   <div className="text-[13px] font-semibold text-bright">
                     {ch.Name}
                   </div>
@@ -699,6 +750,7 @@ function CastScenesTab({ item }: { item: BaseItemDto }) {
 
 /** External rating badges: IMDb (linked) + Rotten Tomatoes critic score. */
 function RatingBadges({ item }: { item: BaseItemDto }) {
+  const t = useTranslations("Detail");
   const imdbId = item.ProviderIds?.Imdb;
   const community = item.CommunityRating;
   const critic = item.CriticRating;
@@ -713,7 +765,7 @@ function RatingBadges({ item }: { item: BaseItemDto }) {
             href={`https://www.imdb.com/title/${imdbId}/`}
             target="_blank"
             rel="noopener noreferrer"
-            title="View on IMDb"
+            title={t("viewOn", { name: "IMDb" })}
             className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
           >
             <ImdbLogo />
@@ -728,7 +780,7 @@ function RatingBadges({ item }: { item: BaseItemDto }) {
       {critic != null && (
         <span
           className="flex items-center gap-1.5"
-          title={`Rotten Tomatoes · ${critic >= 60 ? "Fresh" : "Rotten"}`}
+          title={`Rotten Tomatoes · ${critic >= 60 ? t("rtFresh") : t("rtRotten")}`}
         >
           <TomatoIcon fresh={critic >= 60} />
           <span>{Math.round(critic)}%</span>
@@ -797,7 +849,7 @@ function DetailMenu({
 }) {
   const t = useTranslations("Detail");
   const [open, setOpen] = useState(false);
-  const isPlayable = item.Type !== "Series";
+  const isPlayable = item.Type !== "Series" && item.Type !== "Season";
   // InstantMix (radio) is an audio feature; it returns nothing for video items.
   const canMix = item.Type === "MusicAlbum" || item.Type === "Audio";
 
@@ -886,7 +938,10 @@ function DetailMenu({
                 }}
               />
             )}
-            {isAdmin && item.Type !== "Episode" && (
+            {/* Jellyfin has no RemoteSearch/Season or /Episode endpoint, so
+                identifying either one would search the Movie provider and could
+                overwrite a season with a film's metadata. */}
+            {isAdmin && item.Type !== "Episode" && item.Type !== "Season" && (
               <MenuItem
                 icon={<ScanSearch className="size-4" />}
                 label={t("identify")}

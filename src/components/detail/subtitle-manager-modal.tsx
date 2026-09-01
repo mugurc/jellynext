@@ -16,6 +16,7 @@ import {
 } from "@/lib/jellyfin/player-queries";
 import { streamsByType } from "@/lib/jellyfin/tracks";
 import { Portal } from "@/components/common/portal";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
 import { cn } from "@/lib/utils";
 
 const SUB_LANGS = [
@@ -38,19 +39,25 @@ const SUB_LANGS = [
  */
 export function SubtitleManagerModal({
   item,
+  sourceIndex = 0,
   onClose,
 }: {
   item: BaseItemDto;
+  /** Which version the caller is showing — editing any other one would delete
+   *  subtitles off a file the user is not looking at. */
+  sourceIndex?: number;
   onClose: () => void;
 }) {
   const t = useTranslations("Player");
   const td = useTranslations("Detail");
-  const source = item.MediaSources?.[0];
+  const tc = useTranslations("Common");
+  const source = item.MediaSources?.[sourceIndex];
   const itemId = item.Id ?? "";
   const subs = streamsByType(source, "Subtitle");
 
   const [lang, setLang] = useState("eng");
   const [searchEnabled, setSearchEnabled] = useState(false);
+  const [confirmSub, setConfirmSub] = useState<MediaStream | null>(null);
   const search = useRemoteSubtitleSearch(itemId, lang, searchEnabled);
   const download = useDownloadRemoteSubtitle();
   const upload = useUploadSubtitle();
@@ -99,7 +106,8 @@ export function SubtitleManagerModal({
             <button
               type="button"
               onClick={onClose}
-              aria-label={t("off")}
+              aria-label={tc("close")}
+              title={tc("close")}
               className="flex size-8 items-center justify-center rounded-lg text-muted hover:bg-white/[0.06] hover:text-text"
             >
               <X className="size-5" />
@@ -132,10 +140,7 @@ export function SubtitleManagerModal({
                       </span>
                       <button
                         type="button"
-                        onClick={() =>
-                          s.Index != null &&
-                          deleteSub.mutate({ itemId, index: s.Index })
-                        }
+                        onClick={() => s.Index != null && setConfirmSub(s)}
                         disabled={
                           deleteSub.isPending &&
                           deleteSub.variables?.index === s.Index
@@ -271,6 +276,24 @@ export function SubtitleManagerModal({
           </div>
         </div>
       </div>
+      {confirmSub && (
+        <ConfirmDialog
+          title={td("confirmDeleteSubtitleTitle")}
+          body={td("confirmDeleteSubtitleBody", {
+            name: confirmSub.DisplayTitle ?? confirmSub.Language ?? "",
+          })}
+          confirmLabel={td("delete")}
+          pending={deleteSub.isPending}
+          onCancel={() => setConfirmSub(null)}
+          onConfirm={() => {
+            if (confirmSub.Index != null)
+              deleteSub.mutate(
+                { itemId, index: confirmSub.Index },
+                { onSettled: () => setConfirmSub(null) },
+              );
+          }}
+        />
+      )}
     </Portal>
   );
 }

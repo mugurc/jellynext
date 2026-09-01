@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { MessageSquare, X } from "lucide-react";
@@ -43,6 +44,7 @@ interface Msg {
  * (otherwise the server won't route them here). Mounted once in the app shell.
  */
 export function RealtimeMessages() {
+  const t = useTranslations("Notifications");
   const [messages, setMessages] = useState<Msg[]>([]);
   const router = useRouter();
   const dispatchRemote = useRemoteControl((s) => s.dispatch);
@@ -291,7 +293,7 @@ export function RealtimeMessages() {
             onClick={() =>
               setMessages((list) => list.filter((x) => x.id !== m.id))
             }
-            aria-label="Dismiss"
+            aria-label={t("dismiss")}
             className="flex size-6 flex-none items-center justify-center rounded-md text-dim hover:bg-white/10 hover:text-text"
           >
             <X className="size-4" />

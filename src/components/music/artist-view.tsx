@@ -4,8 +4,9 @@ import { useTranslations } from "next-intl";
 import type { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import { GridSkeleton } from "@/components/media/skeletons";
 import { useArtistAlbums } from "@/lib/jellyfin/queries";
-import { gradientFallback, posterUrl } from "@/lib/jellyfin/media";
+import { posterUrl } from "@/lib/jellyfin/media";
 import { AlbumCard } from "./music-cards";
+import { Art } from "@/components/common/art";
 
 export function ArtistView({ item }: { item: BaseItemDto }) {
   const t = useTranslations("Music");
@@ -16,13 +17,13 @@ export function ArtistView({ item }: { item: BaseItemDto }) {
   return (
     <div className="animate-jn-fade px-10 pt-9 pb-24">
       <div className="mb-10 flex flex-wrap items-end gap-8">
-        <span
-          className="size-[180px] flex-none rounded-full bg-cover bg-center shadow-[0_16px_44px_rgba(0,0,0,0.5)]"
-          style={{
-            backgroundImage: img
-              ? `url("${img}"), ${gradientFallback(item.Id)}`
-              : gradientFallback(item.Id),
-          }}
+        <Art
+          as="span"
+          src={img}
+          seed={item.Id}
+          alt={item.Name ?? ""}
+          priority
+          className="size-[180px] flex-none rounded-full shadow-[0_16px_44px_rgba(0,0,0,0.5)]"
         />
         <div>
           <div className="mb-2 text-[12px] font-bold tracking-[0.08em] text-accent">
@@ -36,7 +37,11 @@ export function ArtistView({ item }: { item: BaseItemDto }) {
 
       <h2 className="mb-4 text-xl font-bold tracking-tight">{t("albums")}</h2>
       {isLoading ? (
-        <GridSkeleton count={6} />
+        <GridSkeleton
+          count={12}
+          variant="square"
+          className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-5"
+        />
       ) : albums.length ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-5">
           {albums.map((al) => (

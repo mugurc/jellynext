@@ -2,8 +2,9 @@
 
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Info, Star } from "lucide-react";
+import { Info, Loader2, Star } from "lucide-react";
 import { TmdbRow } from "./tmdb-row";
+import { FadeImg } from "@/components/common/fade-img";
 import {
   tmdbImage,
   tmdbLogo,
@@ -24,6 +25,7 @@ import {
 /** Worldwide discovery — TMDb trending/new/popular, info-only (no playback). */
 export function DiscoverView() {
   const t = useTranslations("Discover");
+  const tc = useTranslations("Common");
   const trending = useTmdbTrending();
   const nowPlaying = useTmdbNowPlaying();
   const popularMovies = useTmdbPopularMovies();
@@ -44,6 +46,15 @@ export function DiscoverView() {
         <p className="max-w-[440px] text-[14px] text-muted">
           {t("unavailableHint")}
         </p>
+        <button
+          type="button"
+          onClick={() => trending.refetch()}
+          disabled={trending.isFetching}
+          className="mt-2 flex items-center gap-2 rounded-lg border-[1.5px] border-bright/40 bg-white/[0.08] px-5 py-2.5 text-[13px] font-bold text-white transition hover:border-white disabled:opacity-50"
+        >
+          {trending.isFetching && <Loader2 className="size-4 animate-spin" />}
+          {tc("retry")}
+        </button>
       </div>
     );
   }
@@ -115,10 +126,10 @@ function DiscoverHero({
   return (
     <section className="relative flex min-h-[440px] items-end overflow-hidden">
       {backdrop && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
+        <FadeImg
           src={backdrop}
           alt=""
+          priority
           className="absolute inset-0 size-full object-cover"
         />
       )}
@@ -129,11 +140,11 @@ function DiscoverHero({
           {discoverLabel}
         </div>
         {logo ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <FadeImg
             src={logo}
             alt={tmdbTitle(item)}
-            className="animate-jn-fade mb-4 max-h-[120px] w-auto max-w-[420px] object-contain object-left drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
+            priority
+            className="mb-4 max-h-[120px] w-auto max-w-[420px] object-contain object-left drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
           />
         ) : (
           <h1 className="mb-3 text-[48px] leading-none font-extrabold tracking-[-0.03em] text-balance">

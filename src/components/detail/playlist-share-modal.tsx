@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { Globe, Loader2, Lock } from "lucide-react";
+import { Globe, Loader2, Lock, X } from "lucide-react";
 import { Portal } from "@/components/common/portal";
 import { Avatar } from "@/components/common/avatar";
 import { useCurrentUser } from "@/lib/auth/current-user";
@@ -26,6 +27,17 @@ export function PlaylistShareModal({
   onClose: () => void;
 }) {
   const t = useTranslations("Collection");
+  const tc = useTranslations("Common");
+
+  // Every other modal in the app closes on Escape; this one only had a
+  // backdrop click, so a keyboard user could not dismiss it at all.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
   const { userId } = useCurrentUser();
   const detail = usePlaylist(playlistId);
   const shares = usePlaylistUsers(playlistId);
@@ -50,7 +62,18 @@ export function PlaylistShareModal({
           className="animate-jn-pop max-h-[85vh] w-full max-w-[460px] overflow-y-auto rounded-2xl border border-border-strong bg-bg p-6 shadow-2xl"
           onClick={(e) => e.stopPropagation()}
         >
-          <h3 className="mb-1 text-lg font-extrabold">{t("shareTitle")}</h3>
+          <div className="mb-1 flex items-start justify-between gap-4">
+            <h3 className="text-lg font-extrabold">{t("shareTitle")}</h3>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={tc("close")}
+              title={tc("close")}
+              className="-mt-1 -mr-1 flex size-8 flex-none items-center justify-center rounded-lg text-muted transition-colors hover:bg-white/[0.06] hover:text-text"
+            >
+              <X className="size-5" />
+            </button>
+          </div>
           <p className="mb-5 truncate text-[13px] text-muted">{playlistName}</p>
 
           {/* Public / private */}

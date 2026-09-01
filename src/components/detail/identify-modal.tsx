@@ -10,6 +10,7 @@ import {
   type RemoteSearchResult,
 } from "@/lib/jellyfin/queries";
 import { Portal } from "@/components/common/portal";
+import { Art } from "@/components/common/art";
 
 const IDENTIFY_TYPES: Record<string, string> = {
   Movie: "Movie",
@@ -28,6 +29,7 @@ export function IdentifyModal({
   item: BaseItemDto;
   onClose: () => void;
 }) {
+  const tc = useTranslations("Common");
   const t = useTranslations("Identify");
   const search = useIdentifySearch();
   const apply = useApplyIdentify();
@@ -90,7 +92,7 @@ export function IdentifyModal({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={tc("close")}
               className="flex size-8 items-center justify-center rounded-lg text-muted hover:bg-white/[0.06] hover:text-text"
             >
               <X className="size-5" />
@@ -148,20 +150,18 @@ export function IdentifyModal({
                   disabled={apply.isPending}
                   className="flex items-center gap-3 rounded-xl border border-border p-2.5 text-left transition-colors hover:border-accent hover:bg-white/[0.03] disabled:opacity-60"
                 >
-                  <div
-                    className="aspect-[2/3] w-12 flex-none rounded-md bg-card bg-cover bg-center"
-                    style={{
-                      backgroundImage: r.ImageUrl
-                        ? `url("${r.ImageUrl}")`
-                        : undefined,
-                    }}
+                  <Art
+                    as="span"
+                    src={r.ImageUrl}
+                    gradient="none"
+                    className="aspect-[2/3] w-12 flex-none rounded-md bg-card"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
                       <span className="truncate text-[14px] font-bold">
                         {r.Name}
                       </span>
-                      {r.ProductionYear && (
+                      {!!r.ProductionYear && (
                         <span className="flex-none text-[12px] text-muted">
                           {r.ProductionYear}
                         </span>

@@ -50,7 +50,9 @@ export function DetailsTab({ item }: { item: BaseItemDto }) {
   const [showAllSubs, setShowAllSubs] = useState(false);
   const [subsOpen, setSubsOpen] = useState(false);
   const libraryBase =
-    item.Type === "Series" || item.Type === "Episode" ? "/tv" : "/movies";
+    item.Type === "Series" || item.Type === "Season" || item.Type === "Episode"
+      ? "/tv"
+      : "/movies";
   // Subtitle management applies to playable items with a media source.
   const canManageSubs =
     (item.Type === "Movie" ||
@@ -58,6 +60,10 @@ export function DetailsTab({ item }: { item: BaseItemDto }) {
       item.Type === "Video") &&
     (item.MediaSources?.length ?? 0) > 0;
   const sources = item.MediaSources ?? [];
+  // A series or season is a folder: it has no file, so it has no versions, no
+  // audio tracks and no subtitles. "None" there is not an empty result, it is a
+  // question that does not apply — the whole media column goes away instead.
+  const hasMedia = sources.length > 0;
 
   const audio = streamsOfType(sources, sourceIndex, "Audio");
   const subs = streamsOfType(sources, sourceIndex, "Subtitle");
@@ -115,7 +121,12 @@ export function DetailsTab({ item }: { item: BaseItemDto }) {
   if (isAdmin) push(t("factPath"), item.Path);
 
   return (
-    <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[1fr_380px]">
+    <div
+      className={cn(
+        "grid grid-cols-1 items-start gap-10",
+        hasMedia && "lg:grid-cols-[1fr_380px]",
+      )}
+    >
       <div>
         {facts.map((f) => (
           <div
@@ -171,7 +182,7 @@ export function DetailsTab({ item }: { item: BaseItemDto }) {
       </div>
 
       <div className="flex flex-col gap-4">
-        {sources.length > 0 && (
+        {hasMedia && (
           <div className="rounded-2xl border border-border bg-surface p-5">
             <SectionTitle
               icon={<Layers className="size-5" />}
@@ -235,62 +246,68 @@ export function DetailsTab({ item }: { item: BaseItemDto }) {
           </div>
         )}
 
-        <div className="rounded-2xl border border-border bg-surface p-5">
-          <div className="flex items-center justify-between">
-            <SectionTitle
-              icon={<Captions className="size-5" />}
-              label={t("subtitlesAvailable")}
-            />
-            {canManageSubs && (
-              <button
-                type="button"
-                onClick={() => setSubsOpen(true)}
-                className="mb-3.5 flex items-center gap-1.5 rounded-lg border border-border-strong px-2.5 py-1.5 text-[12px] font-bold text-accent transition-colors hover:bg-accent/10"
-              >
-                <Plus className="size-3.5" /> {t("manageSubtitles")}
-              </button>
-            )}
-          </div>
-          {subtitleNames.length ? (
-            <>
-              <div className="-mt-1 mb-3 text-[12.5px] text-muted">
-                {t("subtitleLangCount", { count: subtitleNames.length })}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {(showAllSubs
-                  ? subtitleNames
-                  : subtitleNames.slice(0, SUB_CHIP_CAP)
-                ).map((name) => (
-                  <span
-                    key={name}
-                    className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[12px] font-semibold text-bright"
-                  >
-                    {name}
-                  </span>
-                ))}
-              </div>
-              {subtitleNames.length > SUB_CHIP_CAP && (
+        {hasMedia && (
+          <div className="rounded-2xl border border-border bg-surface p-5">
+            <div className="flex items-center justify-between">
+              <SectionTitle
+                icon={<Captions className="size-5" />}
+                label={t("subtitlesAvailable")}
+              />
+              {canManageSubs && (
                 <button
                   type="button"
-                  onClick={() => setShowAllSubs((v) => !v)}
-                  className="mt-3 text-[12.5px] font-bold text-accent transition-[filter] hover:brightness-110"
+                  onClick={() => setSubsOpen(true)}
+                  className="mb-3.5 flex items-center gap-1.5 rounded-lg border border-border-strong px-2.5 py-1.5 text-[12px] font-bold text-accent transition-colors hover:bg-accent/10"
                 >
-                  {showAllSubs
-                    ? t("showLess")
-                    : t("showMore", {
-                        count: subtitleNames.length - SUB_CHIP_CAP,
-                      })}
+                  <Plus className="size-3.5" /> {t("manageSubtitles")}
                 </button>
               )}
-            </>
-          ) : (
-            <span className="text-[12.5px] text-muted">{t("none")}</span>
-          )}
-        </div>
+            </div>
+            {subtitleNames.length ? (
+              <>
+                <div className="-mt-1 mb-3 text-[12.5px] text-muted">
+                  {t("subtitleLangCount", { count: subtitleNames.length })}
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(showAllSubs
+                    ? subtitleNames
+                    : subtitleNames.slice(0, SUB_CHIP_CAP)
+                  ).map((name) => (
+                    <span
+                      key={name}
+                      className="rounded-full bg-white/[0.06] px-2.5 py-1 text-[12px] font-semibold text-bright"
+                    >
+                      {name}
+                    </span>
+                  ))}
+                </div>
+                {subtitleNames.length > SUB_CHIP_CAP && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllSubs((v) => !v)}
+                    className="mt-3 text-[12.5px] font-bold text-accent transition-[filter] hover:brightness-110"
+                  >
+                    {showAllSubs
+                      ? t("showLess")
+                      : t("showMore", {
+                          count: subtitleNames.length - SUB_CHIP_CAP,
+                        })}
+                  </button>
+                )}
+              </>
+            ) : (
+              <span className="text-[12.5px] text-muted">{t("none")}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {subsOpen && (
-        <SubtitleManagerModal item={item} onClose={() => setSubsOpen(false)} />
+        <SubtitleManagerModal
+          item={item}
+          sourceIndex={sourceIndex}
+          onClose={() => setSubsOpen(false)}
+        />
       )}
     </div>
   );

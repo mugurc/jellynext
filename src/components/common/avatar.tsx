@@ -1,5 +1,6 @@
 import { userImageUrl } from "@/lib/jellyfin/browser";
 import { cn } from "@/lib/utils";
+import { Art } from "@/components/common/art";
 
 /** Deterministic hue (0–359) from a string, so a name always maps to a color. */
 function hueFromString(str: string): number {
@@ -44,19 +45,28 @@ export function Avatar({
     <span
       aria-label={name || undefined}
       className={cn(
-        "flex flex-none items-center justify-center overflow-hidden rounded-lg bg-cover bg-center font-bold text-white select-none",
+        "relative flex flex-none items-center justify-center overflow-hidden rounded-lg font-bold text-white select-none",
         className,
       )}
       style={{
         width: size,
         height: size,
         fontSize: Math.round(size * 0.42),
-        ...(img
-          ? { backgroundImage: `url("${img}")` }
-          : { background: avatarGradient(name || userId) }),
+        background: avatarGradient(name || userId),
       }}
     >
-      {!img && initial}
+      {img ? (
+        <Art
+          as="span"
+          src={img}
+          gradient="none"
+          lazy={false}
+          alt={name || ""}
+          className="absolute inset-0"
+        />
+      ) : (
+        initial
+      )}
     </span>
   );
 }

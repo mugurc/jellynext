@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { X } from "lucide-react";
 import { Portal } from "@/components/common/portal";
 import { usePrefs } from "@/lib/prefs/store";
@@ -20,6 +21,7 @@ export function TrailerModal({
   title?: string | null;
   onClose: () => void;
 }) {
+  const tc = useTranslations("Common");
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -48,7 +50,7 @@ export function TrailerModal({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={tc("close")}
           className="absolute top-5 right-5 flex size-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
         >
           <X className="size-5" />

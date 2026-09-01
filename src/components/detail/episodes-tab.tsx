@@ -3,21 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { Check, Play } from "lucide-react";
+import { Play } from "lucide-react";
 import type { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import {
   formatRuntime,
-  gradientFallback,
   posterUrl,
   resumePercent,
   thumbUrl,
 } from "@/lib/jellyfin/media";
-import {
-  useEpisodes,
-  useSeasons,
-  useTogglePlayed,
-} from "@/lib/jellyfin/queries";
-import { CarouselSkeleton } from "@/components/media/skeletons";
+import { useEpisodes, useSeasons } from "@/lib/jellyfin/queries";
+import { Art } from "@/components/common/art";
+import { CardActions } from "@/components/media/card-actions";
+import { ListSkeleton } from "@/components/media/skeletons";
 import { cn } from "@/lib/utils";
 
 function airDate(value?: string | null): string {
@@ -26,18 +23,28 @@ function airDate(value?: string | null): string {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString();
 }
 
-export function EpisodesTab({ seriesId }: { seriesId: string }) {
+/**
+ * A series' episode list, or one season's when `seasonId` is pinned — a season
+ * page has no other season to switch to, so it skips the picker and the
+ * request behind it.
+ */
+export function EpisodesTab({
+  seriesId,
+  seasonId: pinnedSeason,
+}: {
+  seriesId: string;
+  seasonId?: string;
+}) {
   const t = useTranslations("Detail");
   const router = useRouter();
-  const seasons = useSeasons(seriesId);
-  const played = useTogglePlayed();
+  const seasons = useSeasons(pinnedSeason ? undefined : seriesId);
   const [chosenSeason, setChosenSeason] = useState<string>();
 
   const seasonItems = seasons.data?.Items ?? [];
-  const seasonId = chosenSeason ?? seasonItems[0]?.Id;
+  const seasonId = pinnedSeason ?? chosenSeason ?? seasonItems[0]?.Id;
   const episodes = useEpisodes(seriesId, seasonId);
 
-  if (seasons.isLoading) return <CarouselSkeleton variant="wide" />;
+  if (!pinnedSeason && seasons.isLoading) return <EpisodeListSkeleton />;
 
   return (
     <div>
@@ -62,24 +69,15 @@ export function EpisodesTab({ seriesId }: { seriesId: string }) {
       )}
 
       {episodes.isLoading ? (
-        <div className="flex flex-col gap-2">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl bg-card/60" />
-          ))}
-        </div>
+        <EpisodeListSkeleton />
       ) : episodes.data?.Items?.length ? (
         <div className="flex flex-col gap-2">
           {episodes.data.Items.map((ep) => (
             <EpisodeRow
               key={ep.Id}
               ep={ep}
-              busy={played.isPending && played.variables?.id === ep.Id}
               onOpen={() => router.push(`/item/${ep.Id}`)}
               onPlay={() => router.push(`/watch/${ep.Id}`)}
-              onToggleWatched={() =>
-                ep.Id &&
-                played.mutate({ id: ep.Id, played: !ep.UserData?.Played })
-              }
             />
           ))}
         </div>
@@ -90,25 +88,40 @@ export function EpisodesTab({ seriesId }: { seriesId: string }) {
   );
 }
 
+/**
+ * Built from the same parts as EpisodeRow rather than from a guessed height, so
+ * the two are the same size by construction — the row's height comes from its
+ * 16:9 thumbnail, which a flat `h-24` block was 29px short of.
+ */
+function EpisodeListSkeleton() {
+  return (
+    <ListSkeleton
+      count={5}
+      leading="size-6"
+      thumb="aspect-video w-[172px] rounded-token"
+      lines={3}
+      rowClassName="flex items-center gap-[18px] p-3.5"
+      className="flex flex-col gap-2"
+    />
+  );
+}
+
 function EpisodeRow({
   ep,
-  busy,
   onOpen,
   onPlay,
-  onToggleWatched,
 }: {
   ep: BaseItemDto;
-  busy: boolean;
   onOpen: () => void;
   onPlay: () => void;
-  onToggleWatched: () => void;
 }) {
-  const t = useTranslations("Detail");
-  const tc = useTranslations("Common");
+  const t = useTranslations("Card");
   const img =
     thumbUrl(ep, { maxWidth: 320 }) ?? posterUrl(ep, { maxWidth: 320 });
-  const watched = ep.UserData?.Played ?? false;
   const progress = resumePercent(ep);
+  // A string, so an empty one renders nothing — where a bare `ticks &&` would
+  // both print a literal 0 and paint an empty pill over the thumbnail.
+  const runtime = formatRuntime(ep.RunTimeTicks);
 
   return (
     <div
@@ -116,6 +129,9 @@ function EpisodeRow({
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => {
+        // Only the row itself. Space and Enter on the play/favourite/watched
+        // controls inside it are theirs, and would otherwise also navigate.
+        if (e.target !== e.currentTarget) return;
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           onOpen();
@@ -126,46 +142,46 @@ function EpisodeRow({
       <div className="w-6 flex-none text-center text-xl font-extrabold text-dim">
         {ep.IndexNumber}
       </div>
-      <div
-        className="relative aspect-video w-[172px] flex-none overflow-hidden rounded-lg bg-card bg-cover bg-center"
-        style={{
-          backgroundImage: img
-            ? `url("${img}"), ${gradientFallback(ep.Id)}`
-            : gradientFallback(ep.Id),
-        }}
+      {/* An episode row is a media card lying down, so it wears the same hover
+          language: one wash, a centred play button, and the shared action row
+          that carries favourite / watched / overflow everywhere else. */}
+      <Art
+        src={img}
+        seed={ep.Id}
+        className="aspect-video w-[172px] flex-none rounded-token bg-card"
       >
-        <button
-          type="button"
-          aria-label={tc("play")}
-          onClick={(e) => {
-            e.stopPropagation();
-            onPlay();
-          }}
-          className="absolute inset-0 flex items-center justify-center bg-scrim/20 opacity-0 transition-opacity group-hover:opacity-100"
-        >
-          <span className="flex size-10 items-center justify-center rounded-full bg-white/90 text-on-accent">
-            <Play className="size-4 fill-current" />
-          </span>
-        </button>
-        {watched && (
-          <span className="pointer-events-none absolute top-1.5 left-1.5 flex size-5 items-center justify-center rounded-full bg-accent text-on-accent">
-            <Check className="size-3.5" />
-          </span>
-        )}
-        {ep.RunTimeTicks && (
+        <div className="absolute inset-0 bg-scrim/25 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-has-[:focus-visible]:opacity-100" />
+
+        <div className="jn-hover-reveal pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-200">
+          <button
+            type="button"
+            aria-label={t("playItem", { title: ep.Name ?? "" })}
+            onClick={(e) => {
+              e.stopPropagation();
+              onPlay();
+            }}
+            className="pointer-events-auto flex size-12 items-center justify-center rounded-full bg-white/95 text-on-accent shadow-lg transition-transform duration-200 hover:scale-105"
+          >
+            <Play className="size-5 translate-x-px fill-current" />
+          </button>
+        </div>
+
+        <CardActions item={ep} playable />
+
+        {runtime && (
           <span className="pointer-events-none absolute right-1.5 bottom-1.5 rounded bg-scrim/75 px-1.5 py-0.5 text-[10.5px] font-bold">
-            {formatRuntime(ep.RunTimeTicks)}
+            {runtime}
           </span>
         )}
         {progress > 1 && (
           <div className="absolute inset-x-0 bottom-0 h-1 bg-white/25">
             <div
               className="h-full bg-accent"
-              style={{ width: `${progress}%` }}
+              style={{ width: `${Math.min(100, progress)}%` }}
             />
           </div>
         )}
-      </div>
+      </Art>
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-center gap-2.5">
           <span className="truncate text-[15.5px] font-bold">{ep.Name}</span>
@@ -179,24 +195,6 @@ function EpisodeRow({
           {ep.Overview}
         </p>
       </div>
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleWatched();
-        }}
-        disabled={busy}
-        aria-label={watched ? t("markUnwatched") : t("markWatched")}
-        title={watched ? t("markUnwatched") : t("markWatched")}
-        className={cn(
-          "flex size-9 flex-none items-center justify-center rounded-full border transition-colors disabled:opacity-50",
-          watched
-            ? "border-accent bg-accent/20 text-accent"
-            : "border-border-strong text-muted opacity-0 group-hover:opacity-100 hover:border-white hover:text-bright",
-        )}
-      >
-        <Check className="size-4" />
-      </button>
     </div>
   );
 }

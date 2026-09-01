@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { Skeleton } from "@/components/media/skeletons";
 import type { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import { Billboard } from "@/components/media/billboard";
 import { MediaRow } from "@/components/media/media-row";
@@ -76,7 +77,7 @@ export function HomeView() {
   return (
     <div className="animate-jn-fade">
       {featured.isLoading ? (
-        <div className="h-[600px] animate-pulse bg-card/40" />
+        <Skeleton className="h-[600px] rounded-none" />
       ) : (
         <Billboard items={billboardItems} />
       )}

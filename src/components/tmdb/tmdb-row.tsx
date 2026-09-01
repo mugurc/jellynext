@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Star } from "lucide-react";
 import { Carousel } from "@/components/media/carousel";
 import { CarouselSkeleton } from "@/components/media/skeletons";
+import { FadeImg } from "@/components/common/fade-img";
 import {
   tmdbImage,
   tmdbTitle,
@@ -44,11 +45,10 @@ function TmdbCard({ item }: { item: TmdbItem }) {
     >
       <div className="relative mb-2 aspect-[2/3] overflow-hidden rounded-xl bg-card">
         {img ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <FadeImg
             src={img}
             alt={tmdbTitle(item)}
-            loading="lazy"
+            lazy
             className="size-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
         ) : (

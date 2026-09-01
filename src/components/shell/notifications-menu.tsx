@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils";
  */
 export function NotificationsMenu() {
   const t = useTranslations("Notifications");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const timeAgo = useTimeAgo();
   const { isAdmin } = useCurrentUser();
@@ -164,7 +165,24 @@ export function NotificationsMenu() {
               </div>
             )}
 
-            {isEmpty && !activity.isLoading && (
+            {isAdmin && activity.isError && !entries.length && (
+              <div
+                role="alert"
+                className="flex flex-col items-center gap-2 px-4 py-10 text-center"
+              >
+                <AlertTriangle className="size-5 text-danger-soft" />
+                <p className="text-[12.5px] text-muted">{tc("loadFailed")}</p>
+                <button
+                  type="button"
+                  onClick={() => activity.refetch()}
+                  className="mt-1 rounded-lg border border-border-strong px-3 py-1.5 text-[12px] font-bold text-bright hover:bg-white/[0.06]"
+                >
+                  {tc("retry")}
+                </button>
+              </div>
+            )}
+
+            {isEmpty && !activity.isLoading && !activity.isError && (
               <div className="flex flex-col items-center gap-2 px-4 py-12 text-center">
                 <Bell className="size-6 text-dim" />
                 <p className="text-[12.5px] text-muted">{t("empty")}</p>

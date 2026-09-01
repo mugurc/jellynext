@@ -86,6 +86,8 @@
   },
   "Prefs": {
     "title": "Preferences",
+    "changeAvatar": "Change profile photo",
+    "removeAvatar": "Remove profile photo",
     "general": "GENERAL",
     "playback": "PLAYBACK",
     "subtitles": "SUBTITLES & AUDIO",
@@ -115,7 +117,8 @@
     "quickConnectDesc": "Signing in on a TV or another device? Enter the code it shows to approve it instantly — no password needed.",
     "quickConnectAuthorize": "Authorize",
     "quickConnectDone": "Approved",
-    "quickConnectError": "That code wasn't valid or has expired."
+    "quickConnectError": "That code wasn't valid or has expired.",
+    "avatarFailed": "Couldn't update the photo"
   },
   "Admin": {
     "title": "Server Dashboard",
@@ -255,7 +258,26 @@
     "customCssDesc": "Injected on every page for all users.",
     "splashscreen": "Splash screen",
     "splashscreenDesc": "Show a splash image while the app loads.",
-    "saveFailed": "Could not save"
+    "saveFailed": "Could not save",
+    "confirmDeleteLibraryTitle": "Delete this library?",
+    "confirmDeleteLibraryBody": "\"{name}\" will be removed from the server. The media files on disk are left alone, but the library and its metadata have to be set up again.",
+    "confirmDeleteUserTitle": "Delete this user?",
+    "confirmDeleteUserBody": "\"{name}\" will be deleted along with their watch history, favourites and settings. This can't be undone.",
+    "confirmUninstallTitle": "Uninstall this plugin?",
+    "confirmUninstallBody": "\"{name}\" will be removed together with its configuration. The server may need a restart.",
+    "confirmRevokeTitle": "Revoke this key?",
+    "confirmRevokeBody": "Anything signing in with the \"{name}\" key stops working immediately. The key cannot be restored.",
+    "confirmRemovePathTitle": "Remove this folder?",
+    "confirmRemovePathBody": "\"{path}\" will no longer be scanned, and the library will be refreshed without it.",
+    "confirmResetPasswordTitle": "Reset this password?",
+    "confirmResetPasswordBody": "\"{name}\" will be left with no password and can sign in without one until a new password is set.",
+    "confirmDeleteDeviceTitle": "Remove this device?",
+    "confirmDeleteDeviceBody": "\"{name}\" will be signed out and removed from the device list.",
+    "uninstall": "Uninstall",
+    "remove": "Remove",
+    "reset": "Reset",
+    "noTasks": "No scheduled tasks.",
+    "up": "Up"
   },
   "LibraryEdit": {
     "back": "Back",
@@ -384,7 +406,7 @@
     "upcoming": "Coming Soon",
     "topRatedMovies": "Top Rated Movies",
     "unavailableTitle": "Discovery isn't available",
-    "unavailableHint": "A TMDb API key isn't configured on the server. Add TMDB_API_KEY to .env to browse worldwide trending titles."
+    "unavailableHint": "TMDb could not be reached. The key may have been rejected, the rate limit hit, or the service is down."
   },
   "Library": {
     "all": "All",
@@ -422,6 +444,8 @@
     "tabDetails": "Details",
     "tabCast": "Cast & Scenes",
     "season": "Season",
+    "typeSeries": "Series",
+    "typeMovie": "Movie",
     "watchlist": "Favorite",
     "trailer": "Trailer",
     "download": "Download",
@@ -481,7 +505,12 @@
     "factRuntime": "Runtime",
     "subtitleLangCount": "{count} subtitle {count, plural, one {language} other {languages}}",
     "showMore": "+{count} more",
-    "showLess": "Show less"
+    "showLess": "Show less",
+    "confirmDeleteSubtitleTitle": "Delete this subtitle?",
+    "confirmDeleteSubtitleBody": "\"{name}\" will be deleted from the server. Downloading it again means searching for it again.",
+    "viewOn": "View on {name}",
+    "rtFresh": "Fresh",
+    "rtRotten": "Rotten"
   },
   "ItemEdit": {
     "title": "Edit metadata",
@@ -625,7 +654,13 @@
     "create": "Create",
     "noParties": "No active parties",
     "syncNote": "Everyone in the party stays in sync — play, pause and seek together.",
-    "seek": "Seek"
+    "seek": "Seek",
+    "back": "Back",
+    "back10": "Back 10 seconds",
+    "forward10": "Forward 10 seconds",
+    "volume": "Volume",
+    "closePlayer": "Close player",
+    "pause": "Pause"
   },
   "Notifications": {
     "title": "Notifications",
@@ -657,11 +692,17 @@
     "filter": "Filters",
     "loading": "Loading…",
     "retry": "Retry",
+    "close": "Close",
     "empty": "Nothing here yet",
     "previous": "Previous",
     "next": "Next",
     "shuffle": "Shuffle",
     "repeat": "Repeat",
-    "repeatOne": "Repeat one"
+    "repeatOne": "Repeat one",
+    "cancel": "Cancel",
+    "loadFailed": "Couldn't load this."
+  },
+  "Media": {
+    "slide": "Slide {n}"
   }
 }

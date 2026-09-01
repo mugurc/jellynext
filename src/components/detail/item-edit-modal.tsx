@@ -28,6 +28,7 @@ export function ItemEditModal({
   item: BaseItemDto;
   onClose: () => void;
 }) {
+  const tc = useTranslations("Common");
   const t = useTranslations("ItemEdit");
   const update = useUpdateItem();
   const refresh = useRefreshItem();
@@ -140,7 +141,7 @@ export function ItemEditModal({
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="Close"
+                aria-label={tc("close")}
                 className="flex size-8 items-center justify-center rounded-lg text-muted hover:bg-white/[0.06] hover:text-text"
               >
                 <X className="size-5" />

@@ -13,8 +13,10 @@ import {
   useTmdbDetail,
   type TmdbCastMember,
 } from "@/lib/tmdb/queries";
-import { GridSkeleton } from "@/components/media/skeletons";
+import { GridSkeleton, Skeleton } from "@/components/media/skeletons";
 import { TrailerModal } from "@/components/detail/trailer-modal";
+import { Art } from "@/components/common/art";
+import { FadeImg } from "@/components/common/fade-img";
 
 function runtimeLabel(min?: number): string {
   if (!min) return "";
@@ -28,13 +30,16 @@ export function TmdbDetailView({ type, id }: { type: string; id: string }) {
   const t = useTranslations("Discover");
   const router = useRouter();
   const { data: item, isLoading, isError } = useTmdbDetail(type, id);
-  const owned = useLibraryMatch(id).data;
+  // The route segment is the only thing distinguishing a TMDb movie id from
+  // a series id with the same number.
+  const owned = useLibraryMatch(id, type === "tv" ? "tv" : "movie").data;
   const [trailerOpen, setTrailerOpen] = useState(false);
 
   if (isLoading) {
     return (
       <div>
-        <div className="h-[420px] animate-pulse bg-card/40" />
+        {/* Matches the real hero's min-h-[440px]. */}
+        <Skeleton className="h-[440px] rounded-none" />
         <div className="px-10 py-8">
           <GridSkeleton count={6} />
         </div>
@@ -76,10 +81,10 @@ export function TmdbDetailView({ type, id }: { type: string; id: string }) {
       {/* Hero */}
       <section className="relative flex min-h-[440px] items-end overflow-hidden">
         {backdrop && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <FadeImg
             src={backdrop}
             alt=""
+            priority
             className="absolute inset-0 size-full object-cover"
           />
         )}
@@ -97,10 +102,10 @@ export function TmdbDetailView({ type, id }: { type: string; id: string }) {
 
         <div className="relative flex w-full items-end gap-7 px-10 pb-9">
           {poster && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <FadeImg
               src={poster}
               alt={title}
+              priority
               className="hidden w-[168px] flex-none rounded-xl shadow-2xl ring-1 ring-white/10 sm:block"
             />
           )}
@@ -109,11 +114,11 @@ export function TmdbDetailView({ type, id }: { type: string; id: string }) {
               {t("discover")} · {type === "tv" ? t("series") : t("movie")}
             </div>
             {logo ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <FadeImg
                 src={logo}
                 alt={title}
-                className="animate-jn-fade mb-3 max-h-[110px] w-auto max-w-[420px] object-contain object-left drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
+                priority
+                className="mb-3 max-h-[110px] w-auto max-w-[420px] object-contain object-left drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
               />
             ) : (
               <h1 className="mb-3 text-[44px] leading-none font-extrabold tracking-[-0.03em] text-balance">
@@ -238,9 +243,12 @@ function CastCard({ person }: { person: TmdbCastMember }) {
   const img = tmdbImage(person.profile_path, "w185");
   return (
     <div className="flex items-center gap-3 rounded-xl bg-white/[0.03] p-2.5">
-      <span
-        className="size-12 flex-none rounded-full bg-card bg-cover bg-center"
-        style={img ? { backgroundImage: `url("${img}")` } : undefined}
+      <Art
+        as="span"
+        src={img}
+        gradient="none"
+        alt={person.name}
+        className="size-12 flex-none rounded-full bg-card"
       />
       <div className="min-w-0">
         <div className="truncate text-[13.5px] font-bold">{person.name}</div>

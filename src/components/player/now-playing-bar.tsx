@@ -20,11 +20,13 @@ import {
   getMediaCredentials,
   isDirectMediaDisabled,
 } from "@/lib/jellyfin/direct";
-import { formatClock, gradientFallback } from "@/lib/jellyfin/media";
+import { formatClock } from "@/lib/jellyfin/media";
 import { cn } from "@/lib/utils";
+import { Art } from "@/components/common/art";
 
 /** Persistent audio player bar; owns the single <audio> element for music. */
 export function NowPlayingBar() {
+  const tc = useTranslations("Common");
   const t = useTranslations("Common");
   const queue = usePlayer((s) => s.queue);
   const index = usePlayer((s) => s.index);
@@ -141,13 +143,12 @@ export function NowPlayingBar() {
 
       {/* Track */}
       <div className="flex w-[220px] min-w-0 flex-none items-center gap-3">
-        <span
-          className="size-12 flex-none rounded-lg bg-cover bg-center"
-          style={{
-            backgroundImage: current.coverUrl
-              ? `url("${current.coverUrl}"), ${gradientFallback(current.id)}`
-              : gradientFallback(current.id),
-          }}
+        <Art
+          as="span"
+          src={current.coverUrl}
+          seed={current.id}
+          lazy={false}
+          className="size-12 flex-none rounded-lg"
         />
         <div className="min-w-0">
           <div className="truncate text-[13.5px] font-bold">{current.name}</div>
@@ -176,7 +177,7 @@ export function NowPlayingBar() {
           <button
             type="button"
             onClick={prev}
-            aria-label="Previous"
+            aria-label={tc("previous")}
             className="text-bright transition-colors hover:text-text"
           >
             <SkipBack className="size-[19px]" />
@@ -196,7 +197,7 @@ export function NowPlayingBar() {
           <button
             type="button"
             onClick={next}
-            aria-label="Next"
+            aria-label={tc("next")}
             className="text-bright transition-colors hover:text-text"
           >
             <SkipForward className="size-[19px]" />
@@ -251,13 +252,13 @@ export function NowPlayingBar() {
             if (audioRef.current)
               audioRef.current.volume = Number(e.target.value);
           }}
-          aria-label="Volume"
+          aria-label={t("volume")}
           className="h-1 w-24 accent-accent"
         />
         <button
           type="button"
           onClick={stop}
-          aria-label="Close player"
+          aria-label={t("closePlayer")}
           className="text-muted transition-colors hover:text-text"
         >
           <X className="size-[18px]" />

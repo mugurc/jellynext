@@ -1,13 +1,25 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { useTranslations } from "next-intl";
-import { Camera, Check, Loader2, Smartphone } from "lucide-react";
+import { Camera, Check, Loader2, Smartphone, X } from "lucide-react";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Avatar } from "@/components/common/avatar";
 import { LanguageToggle } from "@/components/common/language-toggle";
 import { useCurrentUser } from "@/lib/auth/current-user";
-import { useMe, useUploadAvatar } from "@/lib/jellyfin/queries";
+import {
+  useDeleteAvatar,
+  useMe,
+  useUploadAvatar,
+} from "@/lib/jellyfin/queries";
 import {
   useAuthorizeQuickConnect,
   useQuickConnectEnabled,
@@ -148,6 +160,13 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
+/**
+ * The id of the row's visible label, so the control beside it can point at it.
+ * Passed through context rather than as a prop: the control is `children`, and
+ * every call site would otherwise have to remember to repeat the label.
+ */
+const RowLabelId = createContext<string | undefined>(undefined);
+
 function Row({
   label,
   desc,
@@ -159,6 +178,7 @@ function Row({
   children: ReactNode;
   last?: boolean;
 }) {
+  const labelId = useId();
   return (
     <div
       className={cn(
@@ -167,10 +187,14 @@ function Row({
       )}
     >
       <div className="flex-1">
-        <div className="text-[14.5px] font-bold">{label}</div>
+        <div id={labelId} className="text-[14.5px] font-bold">
+          {label}
+        </div>
         <div className="text-[12.5px] leading-snug text-muted">{desc}</div>
       </div>
-      <div className="flex-none">{children}</div>
+      <div className="flex-none">
+        <RowLabelId.Provider value={labelId}>{children}</RowLabelId.Provider>
+      </div>
     </div>
   );
 }
@@ -182,11 +206,13 @@ function Toggle({
   on: boolean;
   onChange: (v: boolean) => void;
 }) {
+  const labelId = useContext(RowLabelId);
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
+      aria-labelledby={labelId}
       onClick={() => onChange(!on)}
       className={cn(
         "flex h-7 w-12 flex-none items-center rounded-full p-0.5 transition-colors",
@@ -204,9 +230,11 @@ function Toggle({
 }
 
 function ValueChip({ value, onClick }: { value: string; onClick: () => void }) {
+  const labelId = useContext(RowLabelId);
   return (
     <button
       type="button"
+      aria-labelledby={labelId}
       onClick={onClick}
       className="rounded-lg bg-white/[0.08] px-4 py-2 text-[13px] font-bold text-bright transition-colors hover:bg-white/[0.14]"
     >
@@ -217,34 +245,67 @@ function ValueChip({ value, onClick }: { value: string; onClick: () => void }) {
 
 /** Clickable avatar tile — shows the user's image or initial; click to upload. */
 function AvatarUpload({ name }: { name: string }) {
+  const t = useTranslations("Prefs");
   const { userId } = useCurrentUser();
   const me = useMe();
   const upload = useUploadAvatar();
+  const remove = useDeleteAvatar();
   const fileRef = useRef<HTMLInputElement>(null);
   const tag = me.data?.PrimaryImageTag;
+  const busy = upload.isPending || remove.isPending;
 
   return (
-    <button
-      type="button"
-      onClick={() => fileRef.current?.click()}
-      disabled={upload.isPending}
-      className="group relative flex size-15 flex-none overflow-hidden rounded-2xl"
-      aria-label="Change avatar"
-    >
-      <Avatar
-        userId={userId}
-        imageTag={tag}
-        name={name}
-        size={60}
-        className="rounded-2xl"
-      />
-      <span className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-        {upload.isPending ? (
-          <Loader2 className="size-5 animate-spin" />
-        ) : (
-          <Camera className="size-5" />
-        )}
-      </span>
+    // A wrapper rather than one big button: removing is its own control, and a
+    // button cannot legally be nested inside another button.
+    <div className="group relative size-15 flex-none">
+      <button
+        type="button"
+        onClick={() => fileRef.current?.click()}
+        disabled={busy}
+        className="flex size-full overflow-hidden rounded-2xl"
+        aria-label={t("changeAvatar")}
+        title={t("changeAvatar")}
+      >
+        <Avatar
+          userId={userId}
+          imageTag={tag}
+          name={name}
+          size={60}
+          className="rounded-2xl"
+        />
+        <span className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/50 opacity-0 transition-opacity group-hover:opacity-100 group-has-[:focus-visible]:opacity-100">
+          {busy ? (
+            <Loader2 className="size-5 animate-spin" />
+          ) : (
+            <Camera className="size-5" />
+          )}
+        </span>
+      </button>
+
+      {/* Only when there is something to remove — on the gradient fallback the
+          control would promise to delete a photo that does not exist. */}
+      {tag && (
+        <button
+          type="button"
+          onClick={() => remove.mutate()}
+          disabled={busy}
+          aria-label={t("removeAvatar")}
+          title={t("removeAvatar")}
+          className="jn-hover-reveal absolute -top-1.5 -right-1.5 flex size-6 items-center justify-center rounded-full border border-border-strong bg-bg text-muted shadow-lg transition-colors hover:border-danger hover:text-danger disabled:opacity-50"
+        >
+          <X className="size-3.5" />
+        </button>
+      )}
+
+      {(upload.isError || remove.isError) && (
+        <span
+          role="alert"
+          className="absolute top-full left-0 mt-1.5 text-[11.5px] font-semibold whitespace-nowrap text-danger-soft"
+        >
+          {t("avatarFailed")}
+        </span>
+      )}
+
       <input
         ref={fileRef}
         type="file"
@@ -256,7 +317,7 @@ function AvatarUpload({ name }: { name: string }) {
           e.target.value = "";
         }}
       />
-    </button>
+    </div>
   );
 }
 

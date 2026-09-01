@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { MapPin } from "lucide-react";
 import type { BaseItemDtoQueryResult } from "@jellyfin/sdk/lib/generated-client";
 import { itemImageUrl, jf } from "@/lib/jellyfin/browser";
-import { gradientFallback } from "@/lib/jellyfin/media";
+import { Art } from "@/components/common/art";
 import { useCurrentUser } from "@/lib/auth/current-user";
 import { useItem } from "@/lib/jellyfin/queries";
 import { MediaCard } from "@/components/media/media-card";
@@ -66,20 +66,20 @@ export function PersonView({ personId }: { personId: string }) {
       {/* Hero with the portrait echoed as a blurred backdrop. */}
       <section className="relative overflow-hidden px-10 pt-10 pb-8">
         {img && (
-          <div
-            className="absolute inset-0 -z-10 bg-cover bg-center opacity-20 blur-2xl"
-            style={{ backgroundImage: `url("${img}")` }}
+          <Art
+            src={img}
+            className="absolute inset-0 -z-10 opacity-20 blur-2xl"
+            lazy={false}
           />
         )}
         <div className="absolute inset-0 -z-10 bg-gradient-to-t from-bg to-transparent" />
         <div className="flex flex-wrap gap-8">
-          <div
-            className="size-[200px] flex-none rounded-2xl bg-cover bg-center shadow-2xl ring-1 ring-white/10"
-            style={{
-              backgroundImage: img
-                ? `url("${img}")`
-                : gradientFallback(person?.Id),
-            }}
+          <Art
+            src={img}
+            seed={person?.Id}
+            alt={person?.Name ?? ""}
+            priority
+            className="size-[200px] flex-none rounded-2xl shadow-2xl ring-1 ring-white/10"
           />
           <div className="min-w-[280px] flex-1">
             <div className="mb-2 text-[12px] font-bold tracking-[0.08em] text-accent uppercase">
@@ -169,7 +169,10 @@ export function PersonView({ personId }: { personId: string }) {
           )}
         </h2>
         {films.isLoading ? (
-          <GridSkeleton count={6} />
+          <GridSkeleton
+            count={6}
+            className="grid grid-cols-[repeat(auto-fill,minmax(176px,1fr))] gap-[18px]"
+          />
         ) : filmItems.length ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(176px,1fr))] gap-[18px]">
             {filmItems.map((i) => (

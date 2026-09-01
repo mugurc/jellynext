@@ -152,7 +152,14 @@ export function useNextUp(limit = 16) {
   });
 }
 
-/** Recently Added (optionally scoped to a library). */
+/**
+ * Recently Added (optionally scoped to a library).
+ *
+ * `groupItems` defaults to true server-side, which for a TV library means the
+ * row is made of SEASONS, not series — so a show that just gained a season
+ * appears as that season rather than as itself again. Stated explicitly here
+ * because it is the reason `MediaCard` has to caption a season with its show.
+ */
 export function useLatestItems(parentId?: string, limit = 16) {
   const { userId } = useCurrentUser();
   return useQuery({
@@ -162,6 +169,7 @@ export function useLatestItems(parentId?: string, limit = 16) {
         userId,
         parentId,
         limit,
+        groupItems: true,
         fields: LIST_FIELDS,
         imageTypeLimit: 1,
         enableImageTypes: IMAGE_TYPES,
@@ -788,11 +796,16 @@ export function useAddToCollection() {
       name?: string;
       itemId: string;
     }) =>
+      // The create path returns CollectionCreationResult — the caller needs the
+      // new id to mark the list as one the item is now in.
       collectionId
-        ? jf.post(`/Collections/${collectionId}/Items`, undefined, {
+        ? jf.post<undefined>(`/Collections/${collectionId}/Items`, undefined, {
             ids: itemId,
           })
-        : jf.post("/Collections", undefined, { name, ids: itemId }),
+        : jf.post<{ Id?: string }>("/Collections", undefined, {
+            name,
+            ids: itemId,
+          }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["collectionsList"] }),
   });
 }
@@ -812,11 +825,15 @@ export function useAddToPlaylist() {
       itemId: string;
     }) =>
       playlistId
-        ? jf.post(`/Playlists/${playlistId}/Items`, undefined, {
+        ? jf.post<undefined>(`/Playlists/${playlistId}/Items`, undefined, {
             ids: itemId,
             userId,
           })
-        : jf.post("/Playlists", undefined, { name, ids: itemId, userId }),
+        : jf.post<{ Id?: string }>("/Playlists", undefined, {
+            name,
+            ids: itemId,
+            userId,
+          }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["playlistsList"] }),
   });
 }

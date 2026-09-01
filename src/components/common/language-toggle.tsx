@@ -1,7 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { setLocale } from "@/i18n/actions";
 import { locales, type Locale } from "@/i18n/config";
@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 
 /** EN/TR segmented toggle. Persists to a cookie and refreshes server state. */
 export function LanguageToggle({ className }: { className?: string }) {
+  const t = useTranslations("Prefs");
   const active = useLocale() as Locale;
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -29,7 +30,7 @@ export function LanguageToggle({ className }: { className?: string }) {
         className,
       )}
       role="group"
-      aria-label="Language"
+      aria-label={t("language")}
     >
       {locales.map((locale) => {
         const isActive = locale === active;

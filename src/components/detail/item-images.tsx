@@ -7,6 +7,7 @@ import type { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import { backdropUrl, posterUrl } from "@/lib/jellyfin/media";
 import { useRemoteImages } from "@/lib/jellyfin/queries";
 import { cn } from "@/lib/utils";
+import { Art } from "@/components/common/art";
 
 /** A staged image pick (applied only when the edit form is saved). */
 export type StagedImages = Partial<Record<"Primary" | "Backdrop", string>>;
@@ -74,14 +75,13 @@ function ImageTypeRow({
   return (
     <div>
       <div className="flex items-center gap-3">
-        <div
+        <Art
+          src={current}
+          gradient="none"
           className={cn(
-            "relative flex-none overflow-hidden rounded-lg bg-card bg-cover bg-center",
+            "flex-none rounded-lg bg-card",
             wide ? "aspect-video w-28" : "aspect-[2/3] w-16",
           )}
-          style={{
-            backgroundImage: current ? `url("${current}")` : undefined,
-          }}
         >
           {!current && (
             <div className="flex size-full items-center justify-center text-dim">
@@ -93,7 +93,7 @@ function ImageTypeRow({
               {t("pending")}
             </span>
           )}
-        </div>
+        </Art>
         <div className="flex-1">
           <div className="text-[13.5px] font-bold">{label}</div>
           <button
@@ -121,14 +121,19 @@ function ImageTypeRow({
                     onClick={() => img.Url && onStage(type, img.Url)}
                     title={`${img.ProviderName ?? ""} ${img.Width ?? ""}×${img.Height ?? ""}`}
                     className={cn(
-                      "relative flex-none overflow-hidden rounded-lg border bg-card bg-cover bg-center transition",
+                      "relative flex-none overflow-hidden rounded-lg border bg-card transition",
                       selected
                         ? "border-accent ring-2 ring-accent"
                         : "border-border-strong hover:border-accent",
                       wide ? "aspect-video w-40" : "aspect-[2/3] w-24",
                     )}
-                    style={{ backgroundImage: `url("${img.Url}")` }}
                   >
+                    <Art
+                      as="span"
+                      src={img.Url}
+                      gradient="none"
+                      className="absolute inset-0"
+                    />
                     {selected && (
                       <span className="absolute top-1 right-1 flex size-5 items-center justify-center rounded-full bg-accent text-on-accent">
                         <Check className="size-3.5" />

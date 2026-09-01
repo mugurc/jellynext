@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, LogIn, Server, Smartphone } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
+import { Art } from "@/components/common/art";
 import {
   loginWithPassword,
   quickConnectCancel,
@@ -260,14 +261,20 @@ export function LoginView({
                     className="group flex cursor-pointer flex-col items-center gap-3 transition-transform hover:-translate-y-1 disabled:opacity-60"
                   >
                     <span
-                      className="flex size-[76px] items-center justify-center overflow-hidden rounded-[18px] bg-cover bg-center text-[28px] font-extrabold text-white outline-offset-[3px] outline-accent transition-[outline] group-hover:outline-[3px]"
-                      style={
-                        user.imageUrl
-                          ? { backgroundImage: `url("${user.imageUrl}")` }
-                          : avatarStyle(hueFromString(user.name))
-                      }
+                      className="relative flex size-[76px] items-center justify-center overflow-hidden rounded-[18px] text-[28px] font-extrabold text-white outline-offset-[3px] outline-accent transition-[outline] group-hover:outline-[3px]"
+                      style={avatarStyle(hueFromString(user.name))}
                     >
-                      {!user.imageUrl && user.name.charAt(0).toUpperCase()}
+                      {user.imageUrl ? (
+                        <Art
+                          as="span"
+                          src={user.imageUrl}
+                          gradient="none"
+                          lazy={false}
+                          className="absolute inset-0"
+                        />
+                      ) : (
+                        user.name.charAt(0).toUpperCase()
+                      )}
                     </span>
                     <span className="text-[15px] font-semibold text-bright">
                       {user.name}

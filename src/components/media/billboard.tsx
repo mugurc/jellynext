@@ -13,17 +13,14 @@ import {
   Star,
 } from "lucide-react";
 import type { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
-import {
-  backdropUrl,
-  formatRuntime,
-  gradientFallback,
-  logoUrl,
-} from "@/lib/jellyfin/media";
+import { backdropUrl, formatRuntime, logoUrl } from "@/lib/jellyfin/media";
 import { useCurrentUser } from "@/lib/auth/current-user";
 import { useToggleFavorite } from "@/lib/jellyfin/queries";
 import { usePlayQueue } from "@/lib/player/queue";
 import { resolvePlaybackTarget } from "@/lib/player/start-playback";
 import { cn } from "@/lib/utils";
+import { Art } from "@/components/common/art";
+import { FadeImg } from "@/components/common/fade-img";
 
 const ROTATE_MS = 7000;
 
@@ -78,12 +75,14 @@ export function Billboard({ items }: { items: BaseItemDto[] }) {
               "absolute inset-0 bg-cover bg-center transition-opacity duration-[900ms] ease-out",
               i === index ? "opacity-100" : "opacity-0",
             )}
-            style={{
-              backgroundImage: bg
-                ? `url("${bg}"), ${gradientFallback(f.Id)}`
-                : gradientFallback(f.Id),
-            }}
-          />
+          >
+            <Art
+              src={bg}
+              seed={f.Id}
+              priority={i === 0}
+              className="absolute inset-0"
+            />
+          </div>
         );
       })}
       <div className="absolute inset-0 bg-gradient-to-r from-bg via-bg/60 to-transparent" />
@@ -118,10 +117,10 @@ export function Billboard({ items }: { items: BaseItemDto[] }) {
           </div>
 
           {logo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <FadeImg
               src={logo}
               alt={item.Name ?? ""}
+              priority
               className="mb-5 max-h-[130px] w-auto max-w-[440px] object-contain object-left drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
             />
           ) : (
@@ -137,8 +136,8 @@ export function Billboard({ items }: { items: BaseItemDto[] }) {
                 {item.CommunityRating.toFixed(1)}
               </span>
             )}
-            {item.ProductionYear && <span>{item.ProductionYear}</span>}
-            {item.RunTimeTicks && (
+            {!!item.ProductionYear && <span>{item.ProductionYear}</span>}
+            {!!item.RunTimeTicks && (
               <span>{formatRuntime(item.RunTimeTicks)}</span>
             )}
             {item.OfficialRating && (

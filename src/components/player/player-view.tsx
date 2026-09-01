@@ -84,6 +84,7 @@ import {
   type MediaCredentials,
 } from "@/lib/jellyfin/direct";
 import { cn } from "@/lib/utils";
+import { Art } from "@/components/common/art";
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const CUE_SIZE: Record<string, string> = {
@@ -452,7 +453,9 @@ export function PlayerView({ itemId }: { itemId: string }) {
   useEffect(() => {
     const timer = setInterval(() => {
       const video = videoRef.current;
-      if (!video || video.paused) return;
+      // `startedRef` as well: the other three reporters check it, and a report
+      // before playback has begun carries no session id.
+      if (!video || video.paused || !startedRef.current) return;
       reportProgress({
         ItemId: itemId,
         MediaSourceId: sessionRef.current.source?.Id ?? undefined,
@@ -1276,9 +1279,11 @@ export function PlayerView({ itemId }: { itemId: string }) {
         )}
       >
         {backdrop && (
-          <div
-            className="absolute inset-0 bg-cover bg-center opacity-35"
-            style={{ backgroundImage: `url("${backdrop}")` }}
+          <Art
+            src={backdrop}
+            gradient="none"
+            lazy={false}
+            className="absolute inset-0 opacity-35"
           />
         )}
         <div className="absolute inset-0 bg-black/40" />
@@ -1373,7 +1378,12 @@ export function PlayerView({ itemId }: { itemId: string }) {
       <div
         className={cn(
           "pointer-events-none absolute inset-0 transition-opacity duration-300",
-          showControls ? "opacity-100" : "opacity-0",
+          // Not just opacity: every bar inside re-enables pointer events, so at
+          // opacity 0 they still hit-test. Tapping the bottom of a phone screen
+          // to bring the controls back would land on the invisible scrubber and
+          // seek instead. `visibility` removes them from hit-testing and from
+          // the tab order; jn-controls-hidden delays it so the fade still plays.
+          showControls ? "opacity-100" : "jn-controls-hidden opacity-0",
         )}
       >
         {/* Top bar */}
@@ -1381,7 +1391,7 @@ export function PlayerView({ itemId }: { itemId: string }) {
           <button
             type="button"
             onClick={() => router.back()}
-            aria-label="Back"
+            aria-label={t("back")}
             className="flex size-11 items-center justify-center rounded-[10px] bg-white/[0.12] text-white hover:bg-white/25"
           >
             <ChevronLeft className="size-5" />
@@ -1448,7 +1458,7 @@ export function PlayerView({ itemId }: { itemId: string }) {
           <button
             type="button"
             onClick={() => seekTo(time - 10)}
-            aria-label="Back 10s"
+            aria-label={t("back10")}
             className="pointer-events-auto flex size-[58px] items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
           >
             <RotateCcw className="size-6" />
@@ -1468,7 +1478,7 @@ export function PlayerView({ itemId }: { itemId: string }) {
           <button
             type="button"
             onClick={() => seekTo(time + 10)}
-            aria-label="Forward 10s"
+            aria-label={t("forward10")}
             className="pointer-events-auto flex size-[58px] items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
           >
             <RotateCw className="size-6" />
@@ -1646,7 +1656,7 @@ export function PlayerView({ itemId }: { itemId: string }) {
           </div>
 
           <div className="flex items-center gap-2">
-            <IconBtn onClick={togglePlay} label="Play/Pause">
+            <IconBtn onClick={togglePlay} label={t("sc_playPause")}>
               {playing ? (
                 <Pause className="size-5" />
               ) : (
@@ -1654,7 +1664,7 @@ export function PlayerView({ itemId }: { itemId: string }) {
               )}
             </IconBtn>
             <div className="flex items-center gap-2 px-2">
-              <IconBtn onClick={toggleMute} label="Mute">
+              <IconBtn onClick={toggleMute} label={t("sc_mute")}>
                 {muted ? (
                   <VolumeX className="size-5" />
                 ) : (
@@ -1668,7 +1678,7 @@ export function PlayerView({ itemId }: { itemId: string }) {
                 step={0.05}
                 value={muted ? 0 : volume}
                 onChange={(e) => changeVolume(Number(e.target.value))}
-                aria-label="Volume"
+                aria-label={t("volume")}
                 className="h-1 w-24 accent-accent"
               />
             </div>
@@ -1691,7 +1701,7 @@ export function PlayerView({ itemId }: { itemId: string }) {
               <IconBtn
                 active={menu === "settings"}
                 onClick={() => toggleMenu("settings")}
-                label="Settings"
+                label={t("playbackOptions")}
               >
                 <Settings className="size-[18px]" />
               </IconBtn>
@@ -1714,10 +1724,10 @@ export function PlayerView({ itemId }: { itemId: string }) {
               >
                 <Keyboard className="size-[18px]" />
               </IconBtn>
-              <IconBtn onClick={togglePip} label="Picture in picture">
+              <IconBtn onClick={togglePip} label={t("sc_pip")}>
                 <PictureInPicture2 className="size-[18px]" />
               </IconBtn>
-              <IconBtn onClick={toggleFullscreen} label="Fullscreen">
+              <IconBtn onClick={toggleFullscreen} label={t("sc_fullscreen")}>
                 <Maximize className="size-[18px]" />
               </IconBtn>
             </div>
@@ -2236,6 +2246,7 @@ function PlayerStats({
   direct: boolean;
   onClose: () => void;
 }) {
+  const tc = useTranslations("Common");
   const video = source?.MediaStreams?.find(
     (s) => String(s.Type) === "Video",
   ) as MediaStream | undefined;
@@ -2279,7 +2290,7 @@ function PlayerStats({
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={tc("close")}
           className="flex size-7 items-center justify-center rounded-lg text-muted hover:bg-white/10 hover:text-text"
         >
           <X className="size-4" />
@@ -2315,6 +2326,7 @@ function ShortcutsHelp({
   title: string;
   onClose: () => void;
 }) {
+  const tc = useTranslations("Common");
   const t = useTranslations("Player");
   const rows: [string[], string][] = [
     [["Space", "K"], t("sc_playPause")],
@@ -2350,7 +2362,7 @@ function ShortcutsHelp({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={tc("close")}
             className="flex size-8 items-center justify-center rounded-lg text-muted hover:bg-white/10 hover:text-text"
           >
             <X className="size-4" />
@@ -2443,7 +2455,7 @@ function SubtitleAddPanel({
         <button
           type="button"
           onClick={onBack}
-          aria-label="Back"
+          aria-label={t("back")}
           className="flex size-8 items-center justify-center rounded-lg text-muted hover:bg-white/10 hover:text-text"
         >
           <ChevronLeft className="size-5" />

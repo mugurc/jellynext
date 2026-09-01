@@ -43,6 +43,8 @@ import {
   XCircle,
   type LucideIcon,
 } from "lucide-react";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { QueryState } from "@/components/common/query-state";
 import type {
   ActivityLogEntry,
   DeviceInfoDto,
@@ -55,6 +57,7 @@ import type {
   VirtualFolderInfo,
 } from "@jellyfin/sdk/lib/generated-client";
 import {
+  type AuthKey,
   useActivityLog,
   useAddLibrary,
   useApiKeys,
@@ -73,10 +76,8 @@ import {
   usePlugins,
   useRemoveLibrary,
   useRenameDevice,
-  useRevokeApiKey,
-  useUninstallPlugin,
-  useUpdateTaskTriggers,
   useRestartServer,
+  useRevokeApiKey,
   useRunTask,
   useScanAllLibraries,
   useScheduledTasks,
@@ -87,6 +88,8 @@ import {
   useShutdownServer,
   useSystemInfo,
   useTaskDetail,
+  useUninstallPlugin,
+  useUpdateTaskTriggers,
 } from "@/lib/jellyfin/admin-queries";
 import { useCurrentUser } from "@/lib/auth/current-user";
 import { FolderPicker } from "./folder-picker";
@@ -459,6 +462,7 @@ function DeleteButton({
   onConfirm: () => void;
   pending?: boolean;
 }) {
+  const t = useTranslations("Admin");
   const [confirming, setConfirming] = useState(false);
   if (confirming) {
     return (
@@ -467,7 +471,7 @@ function DeleteButton({
           type="button"
           onClick={onConfirm}
           disabled={pending}
-          aria-label="Confirm delete"
+          aria-label={t("confirm")}
           className="flex size-7 items-center justify-center rounded-md bg-danger-soft/20 text-danger-soft hover:bg-danger-soft/30 disabled:opacity-50"
         >
           <Check className="size-4" />
@@ -475,7 +479,7 @@ function DeleteButton({
         <button
           type="button"
           onClick={() => setConfirming(false)}
-          aria-label="Cancel"
+          aria-label={t("cancel")}
           className="flex size-7 items-center justify-center rounded-md bg-white/[0.06] text-muted hover:bg-white/[0.12]"
         >
           <X className="size-4" />
@@ -487,7 +491,7 @@ function DeleteButton({
     <button
       type="button"
       onClick={() => setConfirming(true)}
-      aria-label="Delete"
+      aria-label={t("delete")}
       className="flex size-7 flex-none items-center justify-center rounded-md text-dim transition-colors hover:bg-danger-soft/15 hover:text-danger-soft"
     >
       <Trash2 className="size-4" />
@@ -508,6 +512,7 @@ function Modal({
   children: ReactNode;
   wide?: boolean;
 }) {
+  const tc = useTranslations("Common");
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -539,7 +544,7 @@ function Modal({
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close"
+              aria-label={tc("close")}
               className="flex size-8 items-center justify-center rounded-lg text-muted hover:bg-white/[0.06] hover:text-text"
             >
               <X className="size-5" />
@@ -710,9 +715,18 @@ function AddLibraryModal({ onClose }: { onClose: () => void }) {
 
 function DevicesTab() {
   const t = useTranslations("Admin");
-  const { data } = useDevices();
-  const devices = data?.Items ?? [];
-  if (!devices.length) return <Empty text={t("noDevices")} />;
+  const devices_ = useDevices();
+  const devices = devices_.data?.Items ?? [];
+  const state = (
+    <QueryState
+      isLoading={devices_.isLoading}
+      isError={devices_.isError}
+      isEmpty={!devices.length}
+      emptyText={t("noDevices")}
+      onRetry={() => devices_.refetch()}
+    />
+  );
+  if (devices_.isLoading || devices_.isError || !devices.length) return state;
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {devices.map((d) => (
@@ -724,6 +738,7 @@ function DevicesTab() {
 
 function DeviceRow({ device }: { device: DeviceInfoDto }) {
   const t = useTranslations("Admin");
+  const tc = useTranslations("Common");
   const timeAgo = useTimeAgo();
   const { deviceId } = useCurrentUser();
   const rename = useRenameDevice();
@@ -787,19 +802,33 @@ function DeviceRow({ device }: { device: DeviceInfoDto }) {
         >
           <Pencil className="size-4" />
         </button>
+        {/* The confirm step used to render only a Confirm button, with nothing
+            to back out to — a mis-click left the row armed to delete until the
+            page was reloaded. Cancel restores it. */}
         {!isThis &&
           (confirming ? (
-            <button
-              type="button"
-              onClick={() => device.Id && del.mutate(device.Id)}
-              className="flex h-8 items-center gap-1 rounded-lg bg-danger/15 px-2 text-[11px] font-bold text-danger-soft"
-            >
-              {del.isPending ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                t("confirm")
-              )}
-            </button>
+            <span className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => device.Id && del.mutate(device.Id)}
+                className="flex h-8 items-center gap-1 rounded-lg bg-danger/15 px-2 text-[11px] font-bold text-danger-soft"
+              >
+                {del.isPending ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  t("confirm")
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                aria-label={tc("cancel")}
+                title={tc("cancel")}
+                className="flex size-8 items-center justify-center rounded-lg text-muted hover:bg-white/10 hover:text-text"
+              >
+                <X className="size-4" />
+              </button>
+            </span>
           ) : (
             <button
               type="button"
@@ -818,10 +847,22 @@ function DeviceRow({ device }: { device: DeviceInfoDto }) {
 // ── Tasks ────────────────────────────────────────────────────────────
 
 function TasksTab() {
-  const { data } = useScheduledTasks();
+  const t = useTranslations("Admin");
+  const tasksQ = useScheduledTasks();
   const run = useRunTask();
-  const tasks = (data ?? []).filter((x) => !x.IsHidden);
-  if (!tasks.length) return <Empty text="—" />;
+  const tasks = (tasksQ.data ?? []).filter((x) => !x.IsHidden);
+  // Was `<Empty text="—" />`: an untranslated dash that meant "loading" and
+  // "none" and "failed" all at once.
+  if (tasksQ.isLoading || tasksQ.isError || !tasks.length)
+    return (
+      <QueryState
+        isLoading={tasksQ.isLoading}
+        isError={tasksQ.isError}
+        isEmpty={!tasks.length}
+        emptyText={t("noTasks")}
+        onRetry={() => tasksQ.refetch()}
+      />
+    );
   return (
     <div className="flex flex-col gap-2.5">
       {tasks.map((task) => (
@@ -1137,9 +1178,18 @@ function TaskTriggersModal({
 
 function ActivityTab() {
   const t = useTranslations("Admin");
-  const { data } = useActivityLog(40);
-  const entries = data?.Items ?? [];
-  if (!entries.length) return <Empty text={t("noActivity")} />;
+  const activityQ = useActivityLog(40);
+  const entries = activityQ.data?.Items ?? [];
+  if (activityQ.isLoading || activityQ.isError || !entries.length)
+    return (
+      <QueryState
+        isLoading={activityQ.isLoading}
+        isError={activityQ.isError}
+        isEmpty={!entries.length}
+        emptyText={t("noActivity")}
+        onRetry={() => activityQ.refetch()}
+      />
+    );
   return (
     <div className="rounded-2xl border border-border bg-surface">
       <div className="flex flex-col divide-y divide-border/60 px-5">
@@ -1427,6 +1477,8 @@ function ApiKeysCard() {
   const revoke = useRevokeApiKey();
   const [app, setApp] = useState("");
   const [copied, setCopied] = useState("");
+  /** The key awaiting confirmation — revoking one breaks live integrations. */
+  const [confirmKey, setConfirmKey] = useState<AuthKey | null>(null);
 
   return (
     <Card icon={Key} title={t("apiKeys")}>
@@ -1453,8 +1505,16 @@ function ApiKeysCard() {
         </button>
       </form>
       <div className="flex flex-col gap-2">
-        {(keys.data?.Items ?? []).length === 0 ? (
-          <Empty text={t("noApiKeys")} />
+        {keys.isLoading ||
+        keys.isError ||
+        (keys.data?.Items ?? []).length === 0 ? (
+          <QueryState
+            isLoading={keys.isLoading}
+            isError={keys.isError}
+            isEmpty={(keys.data?.Items ?? []).length === 0}
+            emptyText={t("noApiKeys")}
+            onRetry={() => keys.refetch()}
+          />
         ) : (
           (keys.data?.Items ?? []).map((k) => (
             <div
@@ -1487,7 +1547,7 @@ function ApiKeysCard() {
               </button>
               <button
                 type="button"
-                onClick={() => k.AccessToken && revoke.mutate(k.AccessToken)}
+                onClick={() => k.AccessToken && setConfirmKey(k)}
                 aria-label={t("revoke")}
                 className="flex size-8 flex-none items-center justify-center rounded-md text-muted hover:bg-danger/20 hover:text-danger-soft"
               >
@@ -1497,6 +1557,22 @@ function ApiKeysCard() {
           ))
         )}
       </div>
+
+      {confirmKey && (
+        <ConfirmDialog
+          title={t("confirmRevokeTitle")}
+          body={t("confirmRevokeBody", { name: confirmKey.AppName ?? "" })}
+          confirmLabel={t("revoke")}
+          pending={revoke.isPending}
+          onCancel={() => setConfirmKey(null)}
+          onConfirm={() => {
+            if (confirmKey.AccessToken)
+              revoke.mutate(confirmKey.AccessToken, {
+                onSettled: () => setConfirmKey(null),
+              });
+          }}
+        />
+      )}
     </Card>
   );
 }
@@ -1522,8 +1598,16 @@ function BackupCard() {
         {t("createBackup")}
       </button>
       <div className="flex flex-col gap-2">
-        {(backups.data ?? []).length === 0 ? (
-          <Empty text={t("noBackups")} />
+        {backups.isLoading ||
+        backups.isError ||
+        (backups.data ?? []).length === 0 ? (
+          <QueryState
+            isLoading={backups.isLoading}
+            isError={backups.isError}
+            isEmpty={(backups.data ?? []).length === 0}
+            emptyText={t("noBackups")}
+            onRetry={() => backups.refetch()}
+          />
         ) : (
           (backups.data ?? []).map((b, i) => (
             <div
