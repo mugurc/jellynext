@@ -46,18 +46,31 @@ export function SettingsTab() {
   const [draft, setDraft] = useState<ServerConfiguration | null>(null);
   const [syncedAt, setSyncedAt] = useState(0);
   const [saved, setSaved] = useState(false);
+  /** Set on the first edit, cleared once a save lands. */
+  const [dirty, setDirty] = useState(false);
 
-  if (config.data && syncedAt !== config.dataUpdatedAt) {
+  // Seed the draft from the server, but never on top of unsaved edits.
+  // `dataUpdatedAt` changes on EVERY successful fetch, identical data included,
+  // so a refetch — the 60s staleTime expiring, or refetchOnReconnect after the
+  // network blips — silently reverted whatever the admin had typed.
+  if (config.data && syncedAt !== config.dataUpdatedAt && !dirty) {
     setSyncedAt(config.dataUpdatedAt);
     setDraft(config.data);
   }
 
   const set: ConfigSetter = (key, value) => {
     setSaved(false);
+    setDirty(true);
     setDraft((d) => (d ? { ...d, [key]: value } : d));
   };
   const save = () => {
-    if (draft) update.mutate(draft, { onSuccess: () => setSaved(true) });
+    if (draft)
+      update.mutate(draft, {
+        onSuccess: () => {
+          setSaved(true);
+          setDirty(false);
+        },
+      });
   };
 
   const shared: ConfigCardProps = {
@@ -66,7 +79,9 @@ export function SettingsTab() {
     onSave: save,
     pending: update.isPending,
     saved,
-    failed: update.isError,
+    // Cleared by the next edit rather than only by the next save attempt, so
+    // the warning does not hang over fields the admin is already fixing.
+    failed: update.isError && !dirty,
   };
 
   return (
@@ -393,7 +408,12 @@ function NumberRow({
         aria-label={label}
         type="number"
         value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
+        // An empty field is not zero. `Number("")` is 0, so clearing the box to
+        // retype a value wrote 0 — on "login attempts before lockout" that
+        // locks every user out after none.
+        onChange={(e) =>
+          e.target.value !== "" && onChange(Number(e.target.value))
+        }
         className="w-24 rounded-lg border border-border-strong bg-white/[0.04] px-3 py-2 text-[13px] outline-none focus:border-accent"
       />
     </RowShell>

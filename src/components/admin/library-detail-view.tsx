@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Skeleton } from "@/components/media/skeletons";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { InlineError } from "@/components/common/query-state";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -30,7 +31,8 @@ import { cn } from "@/lib/utils";
 export function LibraryDetailView({ name }: { name: string }) {
   const t = useTranslations("LibraryEdit");
   const router = useRouter();
-  const { data, isLoading } = useLibraries();
+  const libs = useLibraries();
+  const { data, isLoading } = libs;
   const lib = (data ?? []).find((l) => l.Name === name);
 
   const rename = useRenameLibrary();
@@ -95,10 +97,21 @@ export function LibraryDetailView({ name }: { name: string }) {
             {lib.CollectionType ?? "mixed"}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <InlineError
+            show={scan.isError || del.isError || removePath.isError}
+          />
           <button
             type="button"
-            onClick={() => lib.ItemId && scan.mutate(lib.ItemId)}
+            onClick={() =>
+              lib.ItemId &&
+              // The tick is a mutation state that stays true for the life of
+              // the component, so it used to sit there permanently after the
+              // first scan. Clearing it puts the button back.
+              scan.mutate(lib.ItemId, {
+                onSuccess: () => setTimeout(() => scan.reset(), 2500),
+              })
+            }
             disabled={scan.isPending}
             className="flex items-center gap-1.5 rounded-lg border border-border-strong px-3.5 py-2 text-[13px] font-bold text-bright transition-colors hover:bg-white/[0.06] disabled:opacity-50"
           >
@@ -143,10 +156,15 @@ export function LibraryDetailView({ name }: { name: string }) {
                 rename.mutate(
                   { name, newName: newName.trim() },
                   {
-                    onSuccess: () =>
+                    // Await the refetch before navigating: the new URL looks
+                    // the library up in the cached list, which still held the
+                    // old name, so the page flashed "Library not found."
+                    onSuccess: async () => {
+                      await libs.refetch();
                       router.replace(
                         `/admin/libraries/${encodeURIComponent(newName.trim())}`,
-                      ),
+                      );
+                    },
                   },
                 )
               }
@@ -158,6 +176,7 @@ export function LibraryDetailView({ name }: { name: string }) {
               {rename.isPending && <Loader2 className="size-4 animate-spin" />}
               {t("renameAction")}
             </button>
+            <InlineError show={rename.isError} />
           </div>
         </Section>
 
@@ -220,6 +239,7 @@ export function LibraryDetailView({ name }: { name: string }) {
                   )}
                   {t("add")}
                 </button>
+                <InlineError show={addPath.isError} />
                 <button
                   type="button"
                   onClick={() => setAddOpen(false)}

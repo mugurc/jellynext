@@ -277,7 +277,15 @@
     "remove": "Remove",
     "reset": "Reset",
     "noTasks": "No scheduled tasks.",
-    "up": "Up"
+    "up": "Up",
+    "pluginNotFound": "Plugin not found",
+    "noUsers": "No users.",
+    "pathProgramData": "Program data",
+    "pathCache": "Cache",
+    "pathLogs": "Logs",
+    "pathMetadata": "Metadata",
+    "pathTranscodes": "Transcodes",
+    "pathWeb": "Web"
   },
   "LibraryEdit": {
     "back": "Back",
@@ -703,7 +711,8 @@
     "repeat": "Repeat",
     "repeatOne": "Repeat one",
     "cancel": "Cancel",
-    "loadFailed": "Couldn't load this."
+    "loadFailed": "Couldn't load this.",
+    "actionFailed": "That didn't work"
   },
   "Media": {
     "slide": "Slide {n}"

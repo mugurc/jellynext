@@ -69,3 +69,30 @@ export function QueryState({
 
   return null;
 }
+
+/**
+ * A failed action, said out loud next to the control that failed.
+ *
+ * Most admin mutations reported nothing at all: the spinner stopped, the form
+ * stayed open, and success and failure looked identical — so an admin who had
+ * just added an unreadable media path closed the dialog believing it saved.
+ */
+export function InlineError({
+  show,
+  message,
+}: {
+  show?: boolean;
+  message?: string;
+}) {
+  const t = useTranslations("Common");
+  if (!show) return null;
+  return (
+    <span
+      role="alert"
+      className="flex items-center gap-1.5 text-[12.5px] font-semibold text-danger-soft"
+    >
+      <AlertTriangle className="size-4 flex-none" />
+      {message ?? t("actionFailed")}
+    </span>
+  );
+}

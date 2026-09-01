@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { InlineError } from "@/components/common/query-state";
 import {
   ArrowLeft,
   Check,
@@ -118,14 +119,17 @@ export function PluginDetailView({ id }: { id: string }) {
         </Link>
         <Puzzle className="size-6 flex-none text-accent" />
         <div className="min-w-0 flex-1">
+          {/* Was `?? "—"` over a lone "·": a plugin that is still loading and a
+              plugin that does not exist looked identical, and neither said so. */}
           <h1 className="truncate text-2xl font-extrabold tracking-tight">
-            {plugin?.Name ?? "—"}
+            {plugin?.Name ?? (plugins.isLoading ? "…" : t("pluginNotFound"))}
           </h1>
           <div className="text-[12.5px] text-muted">
-            {plugin?.Version} · {plugin?.Status}
+            {[plugin?.Version, plugin?.Status].filter(Boolean).join(" · ")}
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <InlineError show={toggle.isError || uninstall.isError} />
           <a
             href={dashUrl}
             target="_blank"
@@ -194,7 +198,11 @@ export function PluginDetailView({ id }: { id: string }) {
                     <input
                       type="number"
                       value={Number(vals[key] ?? 0)}
-                      onChange={(e) => setVal(key, Number(e.target.value))}
+                      // `Number("")` is 0 — clearing the field wrote a 0.
+                      onChange={(e) =>
+                        e.target.value !== "" &&
+                        setVal(key, Number(e.target.value))
+                      }
                       className="h-10 w-full rounded-lg border border-border-strong bg-white/[0.04] px-3 text-[13.5px] text-text outline-none focus:border-accent"
                     />
                   </FieldRow>
@@ -255,6 +263,7 @@ export function PluginDetailView({ id }: { id: string }) {
                 )}
                 {saved ? t("saved") : t("save")}
               </button>
+              <InlineError show={saveCfg.isError} />
             </div>
           </div>
         )}

@@ -527,7 +527,10 @@ function NumberField({
       <input
         type="number"
         value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
+        // `Number("")` is 0, so clearing the field to retype it wrote a 0.
+        onChange={(e) =>
+          e.target.value !== "" && onChange(Number(e.target.value))
+        }
         className="h-11 rounded-[10px] border border-border-strong bg-white/[0.04] px-3.5 text-[14px] text-text outline-none focus:border-accent"
       />
       {hint && <span className="text-[11px] text-dim">{hint}</span>}

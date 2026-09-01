@@ -277,7 +277,15 @@
     "remove": "Kaldır",
     "reset": "Sıfırla",
     "noTasks": "Zamanlanmış görev yok.",
-    "up": "Yukarı"
+    "up": "Yukarı",
+    "pluginNotFound": "Eklenti bulunamadı",
+    "noUsers": "Kullanıcı yok.",
+    "pathProgramData": "Program verisi",
+    "pathCache": "Önbellek",
+    "pathLogs": "Günlükler",
+    "pathMetadata": "Metadata",
+    "pathTranscodes": "Dönüştürmeler",
+    "pathWeb": "Web"
   },
   "LibraryEdit": {
     "back": "Geri",
@@ -703,7 +711,8 @@
     "repeat": "Tekrarla",
     "repeatOne": "Tek parçayı tekrarla",
     "cancel": "Vazgeç",
-    "loadFailed": "Bu içerik yüklenemedi."
+    "loadFailed": "Bu içerik yüklenemedi.",
+    "actionFailed": "Bu işlem başarısız oldu"
   },
   "Media": {
     "slide": "Slayt {n}"

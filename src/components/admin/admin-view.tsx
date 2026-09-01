@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Activity,
   AlertTriangle,
@@ -44,7 +44,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
-import { QueryState } from "@/components/common/query-state";
+import { InlineError, QueryState } from "@/components/common/query-state";
 import type {
   ActivityLogEntry,
   DeviceInfoDto,
@@ -219,7 +219,13 @@ function OverviewTab() {
               ))}
             </div>
           ) : (
-            <Empty text={t("noSessions")} />
+            <QueryState
+              isLoading={sessions.isLoading}
+              isError={sessions.isError}
+              isEmpty={!active.length}
+              emptyText={t("noSessions")}
+              onRetry={() => sessions.refetch()}
+            />
           )}
         </Card>
 
@@ -231,7 +237,13 @@ function OverviewTab() {
               ))}
             </div>
           ) : (
-            <Empty text={t("noActivity")} />
+            <QueryState
+              isLoading={activity.isLoading}
+              isError={activity.isError}
+              isEmpty={!activity.data?.Items?.length}
+              emptyText={t("noActivity")}
+              onRetry={() => activity.refetch()}
+            />
           )}
         </Card>
       </div>
@@ -272,10 +284,10 @@ function ServerCard({ info }: { info?: SystemInfo }) {
 
 function LibrariesTab() {
   const t = useTranslations("Admin");
-  const { data } = useLibraries();
+  const libsQ = useLibraries();
   const remove = useRemoveLibrary();
   const [addOpen, setAddOpen] = useState(false);
-  const libs = data ?? [];
+  const libs = libsQ.data ?? [];
 
   return (
     <>
@@ -298,8 +310,15 @@ function LibrariesTab() {
           ))}
         </div>
       ) : (
-        <Empty text={t("noLibraries")} />
+        <QueryState
+          isLoading={libsQ.isLoading}
+          isError={libsQ.isError}
+          isEmpty={!libs.length}
+          emptyText={t("noLibraries")}
+          onRetry={() => libsQ.refetch()}
+        />
       )}
+      <InlineError show={remove.isError} />
       {addOpen && <AddLibraryModal onClose={() => setAddOpen(false)} />}
     </>
   );
@@ -348,11 +367,11 @@ function LibraryCard({
 
 function UsersTab() {
   const t = useTranslations("Admin");
-  const { data } = useServerUsers();
+  const usersQ = useServerUsers();
   const del = useDeleteUser();
   const me = useCurrentUser();
   const [addOpen, setAddOpen] = useState(false);
-  const users = data ?? [];
+  const users = usersQ.data ?? [];
 
   return (
     <>
@@ -374,6 +393,14 @@ function UsersTab() {
           />
         ))}
       </div>
+      <QueryState
+        isLoading={usersQ.isLoading}
+        isError={usersQ.isError}
+        isEmpty={!users.length}
+        emptyText={t("noUsers")}
+        onRetry={() => usersQ.refetch()}
+      />
+      <InlineError show={del.isError} />
       {addOpen && <AddUserModal onClose={() => setAddOpen(false)} />}
     </>
   );
@@ -870,6 +897,7 @@ function TasksTab() {
           key={task.Id}
           task={task}
           onRun={() => task.Id && run.mutate(task.Id)}
+          failed={run.isError && run.variables === task.Id}
           // Only the task being started is busy; the rest stay clickable.
           running={run.isPending && run.variables === task.Id}
         />
@@ -882,10 +910,12 @@ function TaskRow({
   task,
   onRun,
   running,
+  failed,
 }: {
   task: TaskInfo;
   onRun: () => void;
   running: boolean;
+  failed?: boolean;
 }) {
   const t = useTranslations("Admin");
   const timeAgo = useTimeAgo();
@@ -915,6 +945,11 @@ function TaskRow({
         {task.Description && (
           <div className="mt-0.5 truncate text-[12px] text-muted">
             {task.Description}
+          </div>
+        )}
+        {failed && (
+          <div className="mt-1">
+            <InlineError show />
           </div>
         )}
         {isRunning ? (
@@ -1019,6 +1054,7 @@ function TaskTriggersModal({
   taskName: string;
   onClose: () => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("Admin");
   const detail = useTaskDetail(taskId);
   const update = useUpdateTaskTriggers();
@@ -1110,9 +1146,13 @@ function TaskTriggersModal({
                   onChange={(e) => setDay(e.target.value)}
                   className="h-10 rounded-lg border border-border-strong bg-white/[0.04] px-2.5 text-[13px] outline-none focus:border-accent"
                 >
-                  {DOW.map((d) => (
+                  {/* The VALUE stays the English name the API expects; only the
+                      label is localised, via the browser's own calendar data. */}
+                  {DOW.map((d, i) => (
                     <option key={d} value={d}>
-                      {d}
+                      {new Intl.DateTimeFormat(locale, { weekday: "long" })
+                        .format(new Date(Date.UTC(2024, 0, 7 + i)))
+                        .replace(/^./, (c) => c.toUpperCase())}
                     </option>
                   ))}
                 </select>
@@ -1354,12 +1394,12 @@ function SystemTab() {
     [t("webSocket"), d?.WebSocketPortNumber?.toString()],
   ];
   const paths: [string, string | undefined | null][] = [
-    ["Program data", d?.ProgramDataPath],
-    ["Cache", d?.CachePath],
-    ["Logs", d?.LogPath],
-    ["Metadata", d?.InternalMetadataPath],
-    ["Transcodes", d?.TranscodingTempPath],
-    ["Web", d?.WebPath],
+    [t("pathProgramData"), d?.ProgramDataPath],
+    [t("pathCache"), d?.CachePath],
+    [t("pathLogs"), d?.LogPath],
+    [t("pathMetadata"), d?.InternalMetadataPath],
+    [t("pathTranscodes"), d?.TranscodingTempPath],
+    [t("pathWeb"), d?.WebPath],
   ];
 
   return (
@@ -1493,6 +1533,7 @@ function ApiKeysCard() {
         <input
           value={app}
           onChange={(e) => setApp(e.target.value)}
+          aria-label={t("apiKeyApp")}
           placeholder={t("apiKeyApp")}
           className="h-9 flex-1 rounded-lg border border-border-strong bg-white/[0.04] px-3 text-[13px] text-text outline-none focus:border-accent"
         />
@@ -1504,6 +1545,9 @@ function ApiKeysCard() {
           <Plus className="size-3.5" /> {t("create")}
         </button>
       </form>
+      <div className="mb-2">
+        <InlineError show={create.isError || revoke.isError} />
+      </div>
       <div className="flex flex-col gap-2">
         {keys.isLoading ||
         keys.isError ||
@@ -1597,6 +1641,9 @@ function BackupCard() {
         )}
         {t("createBackup")}
       </button>
+      <div className="mb-2">
+        <InlineError show={create.isError} />
+      </div>
       <div className="flex flex-col gap-2">
         {backups.isLoading ||
         backups.isError ||
@@ -1900,8 +1947,4 @@ function Pill({
       {children}
     </span>
   );
-}
-
-function Empty({ text }: { text: string }) {
-  return <p className="py-10 text-center text-[13px] text-muted">{text}</p>;
 }
