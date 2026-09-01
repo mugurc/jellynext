@@ -660,7 +660,10 @@
     "forward10": "10 saniye ileri",
     "volume": "Ses",
     "closePlayer": "Oynatıcıyı kapat",
-    "pause": "Duraklat"
+    "pause": "Duraklat",
+    "skipSegment": "Atla",
+    "exitFullscreen": "Tam ekrandan çık",
+    "exitPip": "Görüntü içinde görüntüden çık"
   },
   "Notifications": {
     "title": "Bildirimler",

@@ -12,6 +12,7 @@ import {
   Keyboard,
   Loader2,
   Maximize,
+  Minimize,
   Pause,
   PictureInPicture2,
   Play,
@@ -31,6 +32,7 @@ import {
   X,
 } from "lucide-react";
 import type {
+  BaseItemDto,
   MediaSourceInfo,
   MediaStream,
 } from "@jellyfin/sdk/lib/generated-client";
@@ -118,6 +120,18 @@ interface KeyActions {
 }
 
 /** Push a text track's cues to the top of the frame (for a secondary sub). */
+/**
+ * "S2·E7", or nothing when the provider never matched the episode.
+ *
+ * These fields are optional, and the template literals that used to build this
+ * inline printed "Snull·Enull" into the player's own title bar for any episode
+ * with no season number.
+ */
+function episodeCode(ep?: BaseItemDto | null): string {
+  if (!ep || ep.ParentIndexNumber == null || ep.IndexNumber == null) return "";
+  return `S${ep.ParentIndexNumber}·E${ep.IndexNumber}`;
+}
+
 function positionCuesTop(track: TextTrack) {
   const cues = track.cues;
   if (!cues) return;
@@ -193,6 +207,8 @@ export function PlayerView({ itemId }: { itemId: string }) {
   const [rate, setRate] = useState(1);
   const [menu, setMenu] = useState<Menu>("none");
   const [showControls, setShowControls] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPip, setIsPip] = useState(false);
   const [audioIndex, setAudioIndex] = useState<number | undefined>();
   const [subIndex, setSubIndex] = useState<number>(-1);
   const [secondarySubIndex, setSecondarySubIndex] = useState<number>(-1);
@@ -306,6 +322,20 @@ export function PlayerView({ itemId }: { itemId: string }) {
       const video = videoRef.current;
       if (!video) return;
       const token = ++loadTokenRef.current;
+      // Close the session we are about to replace. A quality or audio change
+      // used to leave the old PlaySessionId open — the server only reaped it on
+      // its own inactivity timeout, so three quality changes meant three live
+      // transcodes for one viewer.
+      if (sessionRef.current.playSessionId && startedRef.current) {
+        reportStopped({
+          ItemId: itemId,
+          MediaSourceId: sessionRef.current.source?.Id ?? undefined,
+          PlaySessionId: sessionRef.current.playSessionId,
+          PositionTicks: secondsToTicks(positionRef.current),
+        });
+        // The replacement session has to announce its own start.
+        startedRef.current = false;
+      }
       startedAtRef.current = startSeconds;
       // Cleanly stop any in-flight playback before swapping the source so the
       // previous (caught) play() promise settles without an unhandled abort.
@@ -552,6 +582,21 @@ export function PlayerView({ itemId }: { itemId: string }) {
         (el.tagName === "INPUT" ||
           el.tagName === "TEXTAREA" ||
           el.isContentEditable)
+      )
+        return;
+      // Space and Enter belong to whatever control has focus. Swallowing them
+      // here meant Space on the settings gear toggled playback and could never
+      // open the menu — preventDefault also suppressed the button's own
+      // activation. Arrows are only handed over to controls that give them a
+      // meaning of their own; on a plain button they still seek.
+      if (
+        el?.closest("button, a[href]") &&
+        (e.key === " " || e.key === "Enter")
+      )
+        return;
+      if (
+        el?.closest("[role='slider'], [role='switch']") &&
+        e.key.startsWith("Arrow")
       )
         return;
       const a = keyActionsRef.current;
@@ -1029,6 +1074,25 @@ export function PlayerView({ itemId }: { itemId: string }) {
     setMenu("none");
   }
 
+  // The buttons used to be hard-wired to "enter": pressing F, or leaving with
+  // the browser's own Escape, changed nothing in the UI, so the control told a
+  // screen-reader user it would enter fullscreen when it would exit it.
+  useEffect(() => {
+    const sync = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+      setIsPip(Boolean(document.pictureInPictureElement));
+    };
+    const video = videoRef.current;
+    document.addEventListener("fullscreenchange", sync);
+    video?.addEventListener("enterpictureinpicture", sync);
+    video?.addEventListener("leavepictureinpicture", sync);
+    return () => {
+      document.removeEventListener("fullscreenchange", sync);
+      video?.removeEventListener("enterpictureinpicture", sync);
+      video?.removeEventListener("leavepictureinpicture", sync);
+    };
+  }, []);
+
   function toggleFullscreen() {
     const el = containerRef.current;
     if (!el) return;
@@ -1178,7 +1242,21 @@ export function PlayerView({ itemId }: { itemId: string }) {
   }
 
   function deleteSubtitle(index: number) {
-    deleteSub.mutate({ itemId, index }, { onSuccess: reloadCurrent });
+    deleteSub.mutate(
+      { itemId, index },
+      {
+        onSuccess: () => {
+          // The server re-indexes the remaining external tracks, so a selection
+          // held by number now points at a different stream — or at nothing,
+          // which showed no subtitles with no row ticked in the menu. Anything
+          // at or past the deleted index is no longer trustworthy.
+          if (subIndex >= index) setSubIndex(-1);
+          if (secondarySubIndex >= index) setSecondarySubIndex(-1);
+          if (burnIndex >= index) setBurnIndex(-1);
+          reloadCurrent();
+        },
+      },
+    );
   }
 
   // Re-point the keyboard listener at this render's closures. Assigned here,
@@ -1322,11 +1400,15 @@ export function PlayerView({ itemId }: { itemId: string }) {
           className="animate-jn-fade absolute right-10 bottom-28 z-40 flex items-center gap-2 rounded-lg border border-white/25 bg-black/75 px-5 py-3 text-[14px] font-bold text-white backdrop-blur-sm transition hover:bg-black/90"
         >
           <SkipForward className="size-4" />
+          {/* Only these three have a name. A Commercial or Preview segment used
+              to fall through to "Skip intro" forty minutes into a film. */}
           {activeSegment.Type === "Outro"
             ? t("skipCredits")
             : activeSegment.Type === "Recap"
               ? t("skipRecap")
-              : t("skipIntro")}
+              : activeSegment.Type === "Intro"
+                ? t("skipIntro")
+                : t("skipSegment")}
         </button>
       )}
 
@@ -1400,7 +1482,9 @@ export function PlayerView({ itemId }: { itemId: string }) {
             <div className="text-[19px] font-extrabold">{item?.Name}</div>
             <div className="text-[12.5px] text-para">
               {item?.Type === "Episode"
-                ? `${item.SeriesName} · S${item.ParentIndexNumber}·E${item.IndexNumber}`
+                ? [item.SeriesName, episodeCode(item)]
+                    .filter(Boolean)
+                    .join(" · ")
                 : item?.ProductionYear}
             </div>
           </div>
@@ -1427,7 +1511,9 @@ export function PlayerView({ itemId }: { itemId: string }) {
                   aria-label={t("previous")}
                   title={
                     prevEp
-                      ? `${t("previous")} · S${prevEp.ParentIndexNumber}·E${prevEp.IndexNumber}`
+                      ? [t("previous"), episodeCode(prevEp)]
+                          .filter(Boolean)
+                          .join(" · ")
                       : t("previous")
                   }
                   className="flex size-11 items-center justify-center rounded-[10px] bg-white/[0.12] text-white transition-colors hover:bg-white/25 disabled:opacity-35 disabled:hover:bg-white/[0.12]"
@@ -1441,7 +1527,9 @@ export function PlayerView({ itemId }: { itemId: string }) {
                   aria-label={t("next")}
                   title={
                     nextEp
-                      ? `${t("next")} · S${nextEp.ParentIndexNumber}·E${nextEp.IndexNumber}`
+                      ? [t("next"), episodeCode(nextEp)]
+                          .filter(Boolean)
+                          .join(" · ")
                       : t("next")
                   }
                   className="flex size-11 items-center justify-center rounded-[10px] bg-white/[0.12] text-white transition-colors hover:bg-white/25 disabled:opacity-35 disabled:hover:bg-white/[0.12]"
@@ -1724,11 +1812,21 @@ export function PlayerView({ itemId }: { itemId: string }) {
               >
                 <Keyboard className="size-[18px]" />
               </IconBtn>
-              <IconBtn onClick={togglePip} label={t("sc_pip")}>
+              <IconBtn
+                onClick={togglePip}
+                label={isPip ? t("exitPip") : t("sc_pip")}
+              >
                 <PictureInPicture2 className="size-[18px]" />
               </IconBtn>
-              <IconBtn onClick={toggleFullscreen} label={t("sc_fullscreen")}>
-                <Maximize className="size-[18px]" />
+              <IconBtn
+                onClick={toggleFullscreen}
+                label={isFullscreen ? t("exitFullscreen") : t("sc_fullscreen")}
+              >
+                {isFullscreen ? (
+                  <Minimize className="size-[18px]" />
+                ) : (
+                  <Maximize className="size-[18px]" />
+                )}
               </IconBtn>
             </div>
           </div>

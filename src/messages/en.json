@@ -660,7 +660,10 @@
     "forward10": "Forward 10 seconds",
     "volume": "Volume",
     "closePlayer": "Close player",
-    "pause": "Pause"
+    "pause": "Pause",
+    "skipSegment": "Skip",
+    "exitFullscreen": "Exit fullscreen",
+    "exitPip": "Exit picture-in-picture"
   },
   "Notifications": {
     "title": "Notifications",
