@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   ArrowDown,
   ArrowDownUp,
@@ -92,10 +92,20 @@ export function LibraryView({
   const searchParams = useSearchParams();
 
   const views = useUserViews();
-  const parentId = useMemo(
+  // A server can have several libraries of one type ("Movies" and "Kids
+  // Movies"). Picking the first match meant the others had no page at all, and
+  // Home's "See all" for one of them landed in the other.
+  const libraries = useMemo(
     () =>
-      views.data?.Items?.find((v) => v.CollectionType === collectionType)?.Id,
+      (views.data?.Items ?? []).filter(
+        (v) => v.CollectionType === collectionType,
+      ),
     [views.data, collectionType],
+  );
+  const requestedLib = searchParams.get("lib");
+  const parentId = useMemo(
+    () => (libraries.find((v) => v.Id === requestedLib) ?? libraries[0])?.Id,
+    [libraries, requestedLib],
   );
 
   // A comma/pipe-separated URL param → initial multi-select filter.
@@ -133,6 +143,10 @@ export function LibraryView({
     setYears(fromParam("year"));
     setTags(fromParam("tag"));
     setStudios(fromParam("studio"));
+    // Ratings and the A-Z letter are not in the URL, so following a genre or
+    // tag link used to keep them applied and land on an almost-empty grid.
+    setRatings([]);
+    setLetter("");
     setLimit(PAGE);
   }
 
@@ -280,11 +294,29 @@ export function LibraryView({
 
   return (
     <div className="animate-jn-fade px-10 pt-8 pb-16">
-      <div className="mb-6 flex items-end gap-4">
+      <div className="mb-6 flex flex-wrap items-end gap-4">
         <h1 className="text-4xl font-extrabold tracking-tight">{title}</h1>
         <span className="pb-1.5 text-[13.5px] text-muted">
           {total} {tc("items")}
         </span>
+        {libraries.length > 1 && (
+          <div className="mb-0.5 ml-auto inline-flex gap-1 rounded-[9px] bg-white/[0.04] p-1">
+            {libraries.map((v) => (
+              <Link
+                key={v.Id}
+                href={`?lib=${v.Id}`}
+                className={cn(
+                  "rounded-[7px] px-3 py-1.5 text-[12.5px] font-semibold transition-colors",
+                  v.Id === parentId
+                    ? "bg-accent text-on-accent"
+                    : "text-bright hover:bg-white/[0.06]",
+                )}
+              >
+                {v.Name}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mb-6 flex flex-wrap items-center gap-2.5">
@@ -569,11 +601,12 @@ export function LibraryView({
 
 /** Compact horizontal row for the list view. */
 function ListRow({ item }: { item: BaseItemDto }) {
+  const locale = useLocale();
   const img = posterUrl(item, { maxWidth: 120 });
   const meta = [
     item.ProductionYear?.toString(),
     item.OfficialRating ?? undefined,
-    formatRuntime(item.RunTimeTicks) || undefined,
+    formatRuntime(item.RunTimeTicks, locale) || undefined,
     item.CommunityRating ? `★ ${item.CommunityRating.toFixed(1)}` : undefined,
   ].filter(Boolean);
   return (

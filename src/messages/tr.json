@@ -600,7 +600,8 @@
     "unshare": "Paylaşımı kaldır",
     "share": "Paylaş",
     "noOtherUsers": "Bu sunucuda başka kullanıcı yok.",
-    "actionFailed": "İşlem yapılamadı — sunucu değişikliği reddetti."
+    "actionFailed": "İşlem yapılamadı — sunucu değişikliği reddetti.",
+    "nothingPlayable": "Burada oynatılabilir bir şey yok"
   },
   "Player": {
     "subtitles": "Altyazılar",
@@ -677,7 +678,8 @@
     "title": "Bildirimler",
     "markAllRead": "Tümünü okundu işaretle",
     "dismiss": "Kapat",
-    "empty": "Her şeyi gördün"
+    "empty": "Her şeyi gördün",
+    "offline": "Canlı bağlantı koptu"
   },
   "Card": {
     "more": "Daha fazla",

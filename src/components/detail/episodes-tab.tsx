@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Play } from "lucide-react";
 import type { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
 import {
@@ -41,7 +41,12 @@ export function EpisodesTab({
   const [chosenSeason, setChosenSeason] = useState<string>();
 
   const seasonItems = seasons.data?.Items ?? [];
-  const seasonId = pinnedSeason ?? chosenSeason ?? seasonItems[0]?.Id;
+  // Specials come back as season 0 and the server lists them first, so the
+  // Episodes tab — the default tab for a series — opened on Specials. Prefer
+  // the first numbered season; fall back to whatever is there.
+  const firstReal =
+    seasonItems.find((s) => (s.IndexNumber ?? 0) > 0) ?? seasonItems[0];
+  const seasonId = pinnedSeason ?? chosenSeason ?? firstReal?.Id;
   const episodes = useEpisodes(seriesId, seasonId);
 
   if (!pinnedSeason && seasons.isLoading) return <EpisodeListSkeleton />;
@@ -115,13 +120,14 @@ function EpisodeRow({
   onOpen: () => void;
   onPlay: () => void;
 }) {
+  const locale = useLocale();
   const t = useTranslations("Card");
   const img =
     thumbUrl(ep, { maxWidth: 320 }) ?? posterUrl(ep, { maxWidth: 320 });
   const progress = resumePercent(ep);
   // A string, so an empty one renders nothing — where a bare `ticks &&` would
   // both print a literal 0 and paint an empty pill over the thumbnail.
-  const runtime = formatRuntime(ep.RunTimeTicks);
+  const runtime = formatRuntime(ep.RunTimeTicks, locale);
 
   return (
     <div

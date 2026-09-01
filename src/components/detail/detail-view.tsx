@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Check,
   ChevronLeft,
@@ -80,6 +80,7 @@ import { cn } from "@/lib/utils";
 type TabKey = "episodes" | "related" | "details" | "cast";
 
 export function DetailView({ itemId }: { itemId: string }) {
+  const locale = useLocale();
   const t = useTranslations("Detail");
   const tc = useTranslations("Common");
   const router = useRouter();
@@ -153,9 +154,10 @@ export function DetailView({ itemId }: { itemId: string }) {
     return <CollectionView item={item} />;
 
   const backdrop = backdropUrl(item, { maxWidth: 1600 });
-  // Episodes keep a text title (the episode name); movies/series show their
-  // own title logo when they have one.
-  const logo = isEpisode ? null : logoUrl(item, { maxHeight: 220 });
+  // Episodes and seasons keep a text title. logoUrl falls back to the PARENT's
+  // logo, so a season rendered the series wordmark — every season of a show
+  // looked identical, distinguished only by the 12.5px eyebrow above it.
+  const logo = isEpisode || isSeason ? null : logoUrl(item, { maxHeight: 220 });
   // A series folder is never itself resumable — Play opens its next unwatched
   // episode, so the label has to describe that episode instead.
   const resume = resumePercent(isSeries && nextEp ? nextEp : item);
@@ -342,7 +344,7 @@ export function DetailView({ itemId }: { itemId: string }) {
                   the page, and a series folder's RunTimeTicks is often 0. */}
               {!!item.ProductionYear && <span>{item.ProductionYear}</span>}
               {!!item.RunTimeTicks && (
-                <span>{formatRuntime(item.RunTimeTicks)}</span>
+                <span>{formatRuntime(item.RunTimeTicks, locale)}</span>
               )}
               {item.OfficialRating && (
                 <span className="rounded border border-bright/40 px-1.5 text-[11.5px]">
@@ -625,6 +627,7 @@ function RelatedTab({ itemId }: { itemId: string }) {
 }
 
 function CastScenesTab({ item }: { item: BaseItemDto }) {
+  const locale = useLocale();
   const t = useTranslations("Detail");
   const cast = (item.People ?? []).filter(
     (p) => p.Type === "Actor" || p.Type === "GuestStar",
@@ -662,9 +665,9 @@ function CastScenesTab({ item }: { item: BaseItemDto }) {
                     </div>
                     {/* Guarded on the formatted string, not the ticks: an empty
                         one would still paint a bare pill in the corner. */}
-                    {formatRuntime(f.RunTimeTicks) && (
+                    {formatRuntime(f.RunTimeTicks, locale) && (
                       <span className="absolute right-1.5 bottom-1.5 rounded bg-scrim/75 px-1.5 py-0.5 text-[10.5px] font-bold">
-                        {formatRuntime(f.RunTimeTicks)}
+                        {formatRuntime(f.RunTimeTicks, locale)}
                       </span>
                     )}
                   </Art>

@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, X } from "lucide-react";
+import { MessageSquare, WifiOff, X } from "lucide-react";
 import type { SessionInfoDto } from "@jellyfin/sdk/lib/generated-client";
 import { jf } from "@/lib/jellyfin/browser";
 import { useCurrentUser } from "@/lib/auth/current-user";
 import { useNotifications } from "@/lib/notifications/store";
+import { usePlayQueue } from "@/lib/player/queue";
 import {
   useRemoteControl,
   type RemoteAction,
@@ -23,8 +24,19 @@ const VOLUME_ACTIONS: Record<string, RemoteAction> = {
   ToggleMute: "ToggleMute",
 };
 
-/** Backoff before re-attempting a dropped or never-established connection. */
-const RETRY_MS = 5000;
+/**
+ * Backoff before re-attempting a dropped or never-established connection.
+ *
+ * It grows, because it used to be a flat five seconds forever: a token the
+ * server had revoked still produced a 200 from /api/socket-info, so the
+ * handshake failed, onclose fired, and the cycle re-ran — three requests every
+ * five seconds for as long as the tab stayed open, with nothing on screen
+ * saying realtime was dead.
+ */
+const RETRY_MS = 3000;
+const RETRY_MAX_MS = 120_000;
+/** Give up after this many consecutive failures and surface it instead. */
+const RETRY_LIMIT = 8;
 
 interface SocketInfo {
   serverUrl: string;
@@ -46,6 +58,7 @@ interface Msg {
 export function RealtimeMessages() {
   const t = useTranslations("Notifications");
   const [messages, setMessages] = useState<Msg[]>([]);
+  const [offline, setOffline] = useState(false);
   const router = useRouter();
   const dispatchRemote = useRemoteControl((s) => s.dispatch);
   const queryClient = useQueryClient();
@@ -57,6 +70,7 @@ export function RealtimeMessages() {
     let reconnect: ReturnType<typeof setTimeout> | null = null;
     let closed = false;
     let seq = 0;
+    let attempts = 0;
 
     const push = (header: string, text: string) => {
       const id = ++seq;
@@ -64,13 +78,20 @@ export function RealtimeMessages() {
       setTimeout(() => setMessages((m) => m.filter((x) => x.id !== id)), 8000);
     };
 
-    /** Try again in 5s unless the effect has been torn down. */
     const retry = () => {
       if (closed || reconnect) return;
+      attempts += 1;
+      if (attempts > RETRY_LIMIT) {
+        // Out of attempts: stop hammering the server and tell the user, so a
+        // dead realtime connection is visible rather than merely quiet.
+        setOffline(true);
+        return;
+      }
+      const delay = Math.min(RETRY_MS * 2 ** (attempts - 1), RETRY_MAX_MS);
       reconnect = setTimeout(() => {
         reconnect = null;
         void connect();
-      }, RETRY_MS);
+      }, delay);
     };
 
     async function connect() {
@@ -120,6 +141,9 @@ export function RealtimeMessages() {
       }
 
       ws.onopen = () => {
+        // A working connection clears the backoff and the warning.
+        attempts = 0;
+        setOffline(false);
         // Proactively keep the socket alive (Jellyfin drops idle sockets).
         keepAlive = setInterval(() => {
           if (ws?.readyState === WebSocket.OPEN)
@@ -155,9 +179,13 @@ export function RealtimeMessages() {
               Volume?: string;
             };
             ItemIds?: string[];
+            PlayCommand?: string;
             StartPositionTicks?: number;
             Type?: string;
-            Data?: { Playlist?: { ItemId?: string }[] };
+            Data?: {
+              Playlist?: { ItemId?: string }[];
+              PlayingItemIndex?: number;
+            };
           };
         };
         try {
@@ -208,21 +236,41 @@ export function RealtimeMessages() {
           else if (c === "Stop") dispatchRemote({ action: "Stop" });
           return;
         }
-        // The group's queue changed — open the current item to follow along.
+        // The group's queue changed — open the item the group is actually on.
+        // Reading Playlist[0] instead meant a host watching episode 3 sent
+        // everyone to episode 1, and then yanked them back there on every
+        // subsequent queue change, because the "am I already there?" check
+        // compared against episode 1 too.
         if (t === "SyncPlayGroupUpdate" && data.Data?.Type === "PlayQueue") {
-          const first = data.Data.Data?.Playlist?.[0]?.ItemId;
-          if (first && !window.location.pathname.endsWith(`/watch/${first}`)) {
-            router.push(`/watch/${first}`);
+          const queue = data.Data.Data?.Playlist ?? [];
+          const at = data.Data.Data?.PlayingItemIndex ?? 0;
+          const current = queue[at]?.ItemId ?? queue[0]?.ItemId;
+          if (
+            current &&
+            !window.location.pathname.endsWith(`/watch/${current}`)
+          ) {
+            router.push(`/watch/${current}`);
           }
           return;
         }
 
-        // Start playing an item on this device.
+        // Start playing an item on this device — or queue it. PlayCommand was
+        // never read, so "Add to queue" from another client's dashboard
+        // navigated away and abandoned whatever was playing.
         if (t === "Play" && data.Data?.ItemIds?.length) {
+          const ids = data.Data.ItemIds;
+          const cmd = data.Data.PlayCommand ?? "PlayNow";
+          if (cmd === "PlayNext" || cmd === "PlayLast") {
+            const playing = window.location.pathname.startsWith("/watch/")
+              ? window.location.pathname.slice("/watch/".length)
+              : null;
+            usePlayQueue.getState().enqueue(ids, cmd === "PlayNext", playing);
+            return;
+          }
           const start = data.Data.StartPositionTicks
             ? `?t=${Math.floor(data.Data.StartPositionTicks / 10_000_000)}`
             : "";
-          router.push(`/watch/${data.Data.ItemIds[0]}${start}`);
+          router.push(`/watch/${ids[0]}${start}`);
           return;
         }
 
@@ -267,10 +315,19 @@ export function RealtimeMessages() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!messages.length) return null;
+  if (!messages.length && !offline) return null;
 
   return (
     <div className="pointer-events-none fixed top-20 right-6 z-[80] flex flex-col gap-2.5">
+      {offline && (
+        <div
+          role="status"
+          className="animate-jn-pop pointer-events-auto flex w-[320px] items-center gap-2.5 rounded-xl border border-border-strong bg-bg/95 p-3.5 text-[12.5px] font-semibold text-muted shadow-2xl backdrop-blur-md"
+        >
+          <WifiOff className="size-4 flex-none text-danger-soft" />
+          {t("offline")}
+        </div>
+      )}
       {messages.map((m) => (
         <div
           key={m.id}

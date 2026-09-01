@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Skeleton } from "@/components/media/skeletons";
 import type { BaseItemDto } from "@jellyfin/sdk/lib/generated-client";
@@ -15,13 +16,11 @@ import {
   useUserViews,
 } from "@/lib/jellyfin/queries";
 
-/** The library route a collection type maps to (for "See all"). */
+/** The library route a collection type maps to (for "See all"). Only the two
+ *  video types get a Recently Added row, so only they belong here. */
 const LIBRARY_HREF: Record<string, string> = {
   movies: "/movies",
   tvshows: "/tv",
-  music: "/music",
-  boxsets: "/my-stuff",
-  playlists: "/my-stuff",
 };
 
 export function HomeView() {
@@ -125,7 +124,10 @@ export function HomeView() {
           isLoading={topRated.isLoading}
         />
 
-        <GenreDiscoveryRows parentId={moviesView?.Id} />
+        {/* Waits for the library id: without it useGenres queried every
+            library on the server, so the first paint built rows from music
+            genres that then vanished. */}
+        {moviesView?.Id && <GenreDiscoveryRows parentId={moviesView.Id} />}
       </div>
     </div>
   );
@@ -135,9 +137,12 @@ export function HomeView() {
 function LibraryLatestRow({ view }: { view: BaseItemDto }) {
   const t = useTranslations("Home");
   const latest = useLatestItems(view.Id, 18);
-  const href = view.CollectionType
+  // Carry WHICH library: with two movie libraries, "See all" on the Kids row
+  // used to open the other one.
+  const base = view.CollectionType
     ? LIBRARY_HREF[view.CollectionType]
     : undefined;
+  const href = base && view.Id ? `${base}?lib=${view.Id}` : base;
   return (
     <MediaRow
       title={t("recentlyAddedIn", { library: view.Name ?? "" })}
@@ -151,10 +156,18 @@ function LibraryLatestRow({ view }: { view: BaseItemDto }) {
 /** A few genre rows from the movie library, for discovery. */
 function GenreDiscoveryRows({ parentId }: { parentId?: string }) {
   const genres = useGenres(parentId);
-  const picks = (genres.data?.Items ?? [])
-    .map((g) => g.Name)
-    .filter((n): n is string => Boolean(n))
-    .slice(0, 3);
+  // Held for the life of the page so the rows do not reshuffle on every
+  // render. Taking `.slice(0, 3)` of a SortName-ascending list instead meant
+  // every user, on every visit, got Action / Adventure / Animation.
+  const [seed] = useState(() => Math.random());
+  const picks = useMemo(() => {
+    const all = (genres.data?.Items ?? [])
+      .map((g) => g.Name)
+      .filter((n): n is string => Boolean(n));
+    if (all.length <= 3) return all;
+    const start = Math.floor(seed * all.length);
+    return Array.from({ length: 3 }, (_, i) => all[(start + i) % all.length]);
+  }, [genres.data, seed]);
   return (
     <>
       {picks.map((genre) => (

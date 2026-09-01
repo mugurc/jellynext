@@ -9,6 +9,13 @@ interface PlayQueueState {
   title: string;
   /** Replace the queue. */
   setQueue: (ids: string[], title?: string) => void;
+  /**
+   * Append items, or splice them in right after whatever is playing.
+   *
+   * Jellyfin's remote Play command carries a PlayCommand of PlayNow, PlayNext
+   * or PlayLast; the last two are a request to QUEUE, not to navigate.
+   */
+  enqueue: (ids: string[], next?: boolean, afterId?: string | null) => void;
   /** Empty the queue (single-item playback). */
   clear: () => void;
 }
@@ -24,6 +31,18 @@ export const usePlayQueue = create<PlayQueueState>((set) => ({
   ids: [],
   title: "",
   setQueue: (ids, title = "") => set({ ids, title }),
+  enqueue: (ids, next = false, afterId = null) =>
+    set((s) => {
+      // Never queue something twice.
+      const fresh = ids.filter((id) => !s.ids.includes(id));
+      if (!fresh.length) return s;
+      const at = afterId ? s.ids.indexOf(afterId) : -1;
+      if (!next || at < 0) return { ...s, ids: [...s.ids, ...fresh] };
+      return {
+        ...s,
+        ids: [...s.ids.slice(0, at + 1), ...fresh, ...s.ids.slice(at + 1)],
+      };
+    }),
   clear: () => set({ ids: [], title: "" }),
 }));
 

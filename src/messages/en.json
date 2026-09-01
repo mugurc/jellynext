@@ -600,7 +600,8 @@
     "unshare": "Unshare",
     "share": "Share",
     "noOtherUsers": "No other users on this server.",
-    "actionFailed": "That did not work — the server refused the change."
+    "actionFailed": "That did not work — the server refused the change.",
+    "nothingPlayable": "Nothing in here can be played"
   },
   "Player": {
     "subtitles": "Subtitles",
@@ -677,7 +678,8 @@
     "title": "Notifications",
     "markAllRead": "Mark all read",
     "dismiss": "Dismiss",
-    "empty": "You're all caught up"
+    "empty": "You're all caught up",
+    "offline": "Live updates disconnected"
   },
   "Card": {
     "more": "More",

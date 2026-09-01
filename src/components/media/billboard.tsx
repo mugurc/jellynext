@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Check,
   ChevronLeft,
@@ -25,6 +25,7 @@ import { FadeImg } from "@/components/common/fade-img";
 const ROTATE_MS = 7000;
 
 export function Billboard({ items }: { items: BaseItemDto[] }) {
+  const locale = useLocale();
   const t = useTranslations("Common");
   const router = useRouter();
   const { userId } = useCurrentUser();
@@ -138,7 +139,7 @@ export function Billboard({ items }: { items: BaseItemDto[] }) {
             )}
             {!!item.ProductionYear && <span>{item.ProductionYear}</span>}
             {!!item.RunTimeTicks && (
-              <span>{formatRuntime(item.RunTimeTicks)}</span>
+              <span>{formatRuntime(item.RunTimeTicks, locale)}</span>
             )}
             {item.OfficialRating && (
               <span className="rounded border border-bright/40 px-1.5 text-[11.5px]">

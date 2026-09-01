@@ -111,7 +111,9 @@ export function TmdbDetailView({ type, id }: { type: string; id: string }) {
           )}
           <div className="min-w-0 flex-1">
             <div className="mb-2 text-[12px] font-bold tracking-[0.08em] text-accent uppercase">
-              {t("discover")} · {type === "tv" ? t("series") : t("movie")}
+              {/* `discover` is the CTA's label ("View details"); the section
+                  eyebrow wants the page's own name. */}
+              {t("title")} · {type === "tv" ? t("series") : t("movie")}
             </div>
             {logo ? (
               <FadeImg

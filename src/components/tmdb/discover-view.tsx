@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Info, Loader2, Star } from "lucide-react";
 import { TmdbRow } from "./tmdb-row";
 import { FadeImg } from "@/components/common/fade-img";
+import { Skeleton } from "@/components/media/skeletons";
 import {
   tmdbImage,
   tmdbLogo,
@@ -61,8 +62,12 @@ export function DiscoverView() {
 
   return (
     <div className="animate-jn-fade">
-      {hero ? (
-        <DiscoverHero item={hero} discoverLabel={t("discover")} />
+      {trending.isLoading ? (
+        // Matches DiscoverHero's min-h-[440px]; without it the rows below
+        // jumped ~440px on every visit once the data landed.
+        <Skeleton className="h-[440px] rounded-none" />
+      ) : hero ? (
+        <DiscoverHero item={hero} discoverLabel={t("title")} />
       ) : (
         <div className="px-10 pt-8">
           <h1 className="text-4xl font-extrabold tracking-tight">

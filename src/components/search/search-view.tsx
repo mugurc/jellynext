@@ -57,7 +57,11 @@ export function SearchView({ initialQuery = "" }: { initialQuery?: string }) {
   // or by opening a result. Recording every settled keystroke instead filled it
   // with prefixes ("ma", "mat", "matr" on the way to "matrix").
   const commit = () => {
-    if (term.length >= 2) push(term);
+    // `raw`, not the debounced `term`: pressing Enter inside the 300ms window
+    // stored a prefix ("matr") or, under two characters, nothing at all —
+    // exactly the pollution the debounce was there to avoid.
+    const typed = raw.trim();
+    if (typed.length >= 2) push(typed);
   };
 
   // Trending fallback shown on the empty/no-result state — real popularity

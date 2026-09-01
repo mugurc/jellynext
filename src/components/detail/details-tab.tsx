@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Captions,
   CheckCircle2,
@@ -44,6 +44,7 @@ function formatBytes(bytes?: number | null): string {
 }
 
 export function DetailsTab({ item }: { item: BaseItemDto }) {
+  const locale = useLocale();
   const t = useTranslations("Detail");
   const { isAdmin } = useCurrentUser();
   const [sourceIndex, setSourceIndex] = useState(0);
@@ -104,7 +105,7 @@ export function DetailsTab({ item }: { item: BaseItemDto }) {
   );
   push(t("factRating"), item.CommunityRating?.toFixed(1));
   push(t("factOfficialRating"), item.OfficialRating);
-  push(t("factRuntime"), formatRuntime(item.RunTimeTicks));
+  push(t("factRuntime"), formatRuntime(item.RunTimeTicks, locale));
   push(t("factStudios"), item.Studios?.map((s) => s.Name).join(", "));
   push(t("factDirectors"), directors.join(", "));
   push(t("factWriters"), writers.join(", "));

@@ -7,13 +7,29 @@ export function ticksToSeconds(ticks?: number | null): number {
   return ticks ? ticks / TICKS_PER_SECOND : 0;
 }
 
-/** "2h 14m" / "48m" from runtime ticks. */
-export function formatRuntime(ticks?: number | null): string {
+/**
+ * "2h 14m" / "48m" from runtime ticks, in the caller's locale.
+ *
+ * The units used to be hardcoded, so a fully translated Turkish page still read
+ * "2h 14m". Intl's `unit` formatter carries the abbreviations for us.
+ */
+export function formatRuntime(ticks?: number | null, locale?: string): string {
   const total = Math.round(ticksToSeconds(ticks) / 60);
   if (!total) return "";
   const h = Math.floor(total / 60);
   const m = total % 60;
-  return h ? `${h}h ${m}m` : `${m}m`;
+  // "short", not "narrow": narrow renders Turkish minutes as "d", which reads
+  // as "gün". Short gives "dk" — and its trailing abbreviation dot is dropped,
+  // since the value is always small enough to have no thousands separator.
+  const unit = (value: number, u: "hour" | "minute") =>
+    new Intl.NumberFormat(locale, {
+      style: "unit",
+      unit: u,
+      unitDisplay: "short",
+    })
+      .format(value)
+      .replace(/\.(?=\s|$)/g, "");
+  return h ? `${unit(h, "hour")} ${unit(m, "minute")}` : unit(m, "minute");
 }
 
 /** "1:23:45" / "4:05" from seconds. */

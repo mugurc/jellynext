@@ -32,6 +32,7 @@ import { usePlayQueue } from "@/lib/player/queue";
 import { Portal } from "@/components/common/portal";
 import { PlaylistShareModal } from "@/components/detail/playlist-share-modal";
 import { ListSkeleton } from "@/components/media/skeletons";
+import { InlineError } from "@/components/common/query-state";
 import { Art } from "@/components/common/art";
 
 const PLAYABLE = ["Movie", "Episode", "Video", "MusicVideo", "Audio"];
@@ -70,14 +71,18 @@ export function CollectionView({ item }: { item: BaseItemDto }) {
 
   const backdrop = backdropUrl(item, { maxWidth: 1600 });
 
+  // A collection can hold containers (series, other collections), and none of
+  // those are playable. The button used to be enabled for them and then return
+  // silently — no navigation, no message, nothing.
+  const playableIds = items
+    .filter((i) => i.Type && PLAYABLE.includes(i.Type))
+    .map((i) => i.Id)
+    .filter((x): x is string => Boolean(x));
+
   function playAll() {
-    const ids = items
-      .filter((i) => i.Type && PLAYABLE.includes(i.Type))
-      .map((i) => i.Id)
-      .filter((x): x is string => Boolean(x));
-    if (!ids.length) return;
-    setQueue(ids, item.Name ?? "");
-    router.push(`/watch/${ids[0]}`);
+    if (!playableIds.length) return;
+    setQueue(playableIds, item.Name ?? "");
+    router.push(`/watch/${playableIds[0]}`);
   }
 
   function removeItem(entry: BaseItemDto) {
@@ -172,12 +177,20 @@ export function CollectionView({ item }: { item: BaseItemDto }) {
             </h1>
           )}
           <div className="mb-5 text-[13.5px] text-muted">
-            {t("itemCount", { count: items.length })}
+            {/* The count sits outside the loading branch below, so it used to
+                assert "0 items" while the rows were still coming. */}
+            {query.isLoading
+              ? "\u00a0"
+              : t("itemCount", { count: items.length })}
           </div>
 
           {/* Writes here can be refused by the server (rights, locked item);
               say so instead of leaving the edit looking like it applied. */}
-          {(renaming.isError || deleteItem.isError) && (
+          {(renaming.isError ||
+            deleteItem.isError ||
+            removeCol.isError ||
+            removePl.isError ||
+            move.isError) && (
             <p
               role="alert"
               className="mb-4 flex items-center gap-1.5 text-[13px] font-semibold text-danger-soft"
@@ -191,7 +204,8 @@ export function CollectionView({ item }: { item: BaseItemDto }) {
             <button
               type="button"
               onClick={playAll}
-              disabled={!items.length}
+              disabled={!playableIds.length}
+              title={playableIds.length ? undefined : t("nothingPlayable")}
               className="flex items-center gap-2.5 rounded-lg bg-white px-7 py-3 text-[15px] font-extrabold text-on-accent transition hover:bg-[#d9f7fb] disabled:opacity-50"
             >
               <Play className="size-5 fill-current" />
@@ -320,6 +334,11 @@ export function CollectionView({ item }: { item: BaseItemDto }) {
                   {t("deleteList")}
                 </button>
               </div>
+              {/* The hero's alert is behind this dialog's own backdrop, so a
+                  refused delete looked like nothing happened at all. */}
+              <div className="mt-3 flex justify-end">
+                <InlineError show={deleteItem.isError} />
+              </div>
             </div>
           </div>
         </Portal>
@@ -388,7 +407,9 @@ function MemberRow({
         </div>
       </button>
 
-      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+      {/* jn-hover-reveal rather than a bare hover: it also reveals on keyboard
+          focus, so tabbing no longer lands on invisible move/play/remove. */}
+      <div className="jn-hover-reveal flex items-center gap-1 transition-opacity">
         {isPlaylist && (
           <>
             <button
