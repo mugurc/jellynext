@@ -1,0 +1,140 @@
+<!doctype html>
+<!--
+  The TV app's trailer player (tv/trailer frames this page). YouTube's embedded
+  player only plays on a page it can name from the Referer, which the TV app's
+  local files can't give it, so it lives here. Plain ES5: the TV runs
+  Chromium 79.
+
+  /tv/trailer.html?v=<YouTube id>. Tells the frame {jellynextTrailer: "leave"}
+  when the trailer ends, can't play, or Back is pressed, and takes the remote's
+  keys from it as {key: <keyCode>} while it has focus.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trailer</title>
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; background: #000; overflow: hidden; }
+  #player { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; }
+  #bar {
+    position: absolute; left: 96px; right: 96px; bottom: 64px;
+    font: 600 30px sans-serif; color: #fff; opacity: 0; transition: opacity 0.25s;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  }
+  #bar.shown { opacity: 1; }
+  #track { height: 8px; margin-top: 16px; border-radius: 4px; background: rgba(255, 255, 255, 0.3); }
+  #fill { height: 100%; width: 0; border-radius: 4px; background: #fff; }
+  #message {
+    position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+    color: #c3d0d9; font: 500 34px sans-serif; text-align: center;
+  }
+</style>
+</head>
+<body>
+<div id="player"></div>
+<div id="bar"><span id="state"></span> <span id="time"></span><div id="track"><div id="fill"></div></div></div>
+<div id="message"></div>
+<script>
+  (function () {
+    var player = null;
+    var hideAt = 0;  // when the bar goes away, unless paused
+
+    function video() {
+      var m = /[?&]v=([\w-]{11})(?:&|$)/.exec(location.search);
+      return m ? m[1] : "";
+    }
+
+    function tell(what) {
+      if (window.parent !== window) window.parent.postMessage({ jellynextTrailer: what }, "*");
+    }
+
+    function clock(s) {
+      s = Math.max(0, Math.floor(s || 0));
+      var m = Math.floor(s / 60);
+      var r = s % 60;
+      return m + ":" + (r < 10 ? "0" : "") + r;
+    }
+
+    function playing() {
+      return player && player.getPlayerState && player.getPlayerState() === YT.PlayerState.PLAYING;
+    }
+
+    function drawBar() {
+      var bar = document.getElementById("bar");
+      if (!player || !player.getDuration) return;
+      var at = player.getCurrentTime() || 0;
+      var length = player.getDuration() || 0;
+      document.getElementById("state").textContent = playing() ? "" : "❚❚";
+      document.getElementById("time").textContent = clock(at) + " / " + clock(length);
+      document.getElementById("fill").style.width = (length > 0 ? (100 * at) / length : 0) + "%";
+      bar.className = !playing() || Date.now() < hideAt ? "shown" : "";
+    }
+
+    function showBar() {
+      hideAt = Date.now() + 3000;
+      drawBar();
+    }
+
+    function press(code) {
+      if (code === 461 || code === 8 || code === 27 || code === 413) {  // Back, Stop
+        tell("leave");
+        return true;
+      }
+      if (!player || !player.getPlayerState) return false;
+      switch (code) {
+        case 13:                                                               // OK
+          if (playing()) player.pauseVideo();
+          else player.playVideo();
+          break;
+        case 415: player.playVideo(); break;                                   // Play
+        case 19: player.pauseVideo(); break;                                   // Pause
+        case 37: case 412: player.seekTo(Math.max(0, player.getCurrentTime() - 10), true); break;
+        case 39: case 417: player.seekTo(player.getCurrentTime() + 10, true); break;
+        case 38: case 40: break;                                               // just show the bar
+        default: return false;
+      }
+      showBar();
+      return true;
+    }
+
+    window.onYouTubeIframeAPIReady = function () {
+      var id = video();
+      if (!id) {
+        tell("leave");
+        return;
+      }
+      player = new YT.Player("player", {
+        host: "https://www.youtube-nocookie.com",
+        videoId: id,
+        playerVars: { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, playsinline: 1, iv_load_policy: 3 },
+        events: {
+          onReady: function (e) {
+            e.target.playVideo();
+            tell("ready");
+          },
+          onStateChange: function (e) {
+            if (e.data === YT.PlayerState.ENDED) tell("leave");
+            else drawBar();
+          },
+          onError: function (e) {
+            document.getElementById("message").textContent = "Trailer unavailable (" + e.data + ")";
+            setTimeout(function () { tell("leave"); }, 2500);
+          }
+        }
+      });
+      setInterval(drawBar, 500);
+    };
+
+    window.addEventListener("message", function (e) {
+      if (e.source !== window.parent || !e.data || typeof e.data.key !== "number") return;
+      press(e.data.key);
+    });
+    document.addEventListener("keydown", function (e) {
+      if (press(e.keyCode)) e.preventDefault();
+    });
+  })();
+</script>
+<script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
