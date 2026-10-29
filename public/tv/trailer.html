@@ -5,9 +5,10 @@
   local files can't give it, so it lives here. Plain ES5: the TV runs
   Chromium 79.
 
-  /tv/trailer.html?v=<YouTube id>. Tells the frame {jellynextTrailer: "leave"}
-  when the trailer ends, can't play, or Back is pressed, and takes the remote's
-  keys from it as {key: <keyCode>} while it has focus.
+  /tv/trailer.html?v=<YouTube id>. Tells the frame {jellynextTrailer: ...}
+  "ready" once the player has loaded, "playing" once the trailer does, and
+  "leave" when it ends, can't play, or Back is pressed; takes the remote's keys
+  from it as {key: <keyCode>} while it has focus.
 -->
 <html lang="en">
 <head>
@@ -56,8 +57,12 @@
       return m + ":" + (r < 10 ? "0" : "") + r;
     }
 
+    function state() {
+      return player && player.getPlayerState ? player.getPlayerState() : -1;
+    }
+
     function playing() {
-      return player && player.getPlayerState && player.getPlayerState() === YT.PlayerState.PLAYING;
+      return state() === YT.PlayerState.PLAYING;
     }
 
     function drawBar() {
@@ -65,10 +70,12 @@
       if (!player || !player.getDuration) return;
       var at = player.getCurrentTime() || 0;
       var length = player.getDuration() || 0;
-      document.getElementById("state").textContent = playing() ? "" : "❚❚";
+      var paused = state() === YT.PlayerState.PAUSED;
+      document.getElementById("state").textContent = paused ? "❚❚" : "";
       document.getElementById("time").textContent = clock(at) + " / " + clock(length);
       document.getElementById("fill").style.width = (length > 0 ? (100 * at) / length : 0) + "%";
-      bar.className = !playing() || Date.now() < hideAt ? "shown" : "";
+      // Not while it's still loading: the TV app shows that.
+      bar.className = paused || Date.now() < hideAt ? "shown" : "";
     }
 
     function showBar() {
@@ -115,7 +122,8 @@
           },
           onStateChange: function (e) {
             if (e.data === YT.PlayerState.ENDED) tell("leave");
-            else drawBar();
+            else if (e.data === YT.PlayerState.PLAYING) tell("playing");
+            drawBar();
           },
           onError: function (e) {
             document.getElementById("message").textContent = "Trailer unavailable (" + e.data + ")";
